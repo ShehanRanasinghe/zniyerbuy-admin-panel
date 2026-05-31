@@ -42,11 +42,10 @@ export default function UsersPage() {
           <h1 className="text-xl font-medium text-white">User Management</h1>
           <p className="text-[#888888] text-sm mt-1">Manage all registered users</p>
         </div>
-        <button className="bg-[#f05a1a] hover:bg-[#c04010] text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+        <button className="bg-[#f05a1a] hover:bg-[#c04010] text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
           + Add User
         </button>
       </div>
-
       <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
           <div className="text-2xl font-medium text-white">{users.length}</div>
@@ -61,39 +60,22 @@ export default function UsersPage() {
           <div className="text-[#888888] text-xs mt-1">Sellers</div>
         </div>
       </div>
-
       <div className="flex gap-3 mb-5">
         <div className="flex-1 relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666666] text-sm">🔍</span>
-          <input
-            type="text"
-            placeholder="Search by name or email..."
-            value={search}
+          <input type="text" placeholder="Search by name or email..." value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg py-2 pl-9 pr-4 text-sm text-white placeholder-[#444444] focus:outline-none focus:border-[#f05a1a]"
-          />
+            className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg py-2 pl-9 pr-4 text-sm text-white placeholder-[#444444] focus:outline-none focus:border-[#f05a1a]" />
         </div>
-        <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-          className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#888888] focus:outline-none"
-        >
-          <option>All roles</option>
-          <option>Admin</option>
-          <option>Seller</option>
-          <option>User</option>
+        <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}
+          className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#888888] focus:outline-none">
+          <option>All roles</option><option>Admin</option><option>Seller</option><option>User</option>
         </select>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#888888] focus:outline-none"
-        >
-          <option>All status</option>
-          <option>Active</option>
-          <option>Inactive</option>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+          className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#888888] focus:outline-none">
+          <option>All status</option><option>Active</option><option>Inactive</option>
         </select>
       </div>
-
       <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden">
         <table className="w-full border-collapse">
           <thead>
@@ -111,9 +93,7 @@ export default function UsersPage() {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
-                      style={{ background: user.color, color: user.textColor }}>
-                      {user.initials}
-                    </div>
+                      style={{ background: user.color, color: user.textColor }}>{user.initials}</div>
                     <div>
                       <div className="text-sm font-medium text-white">{user.name}</div>
                       <div className="text-xs text-[#666666]">{user.email}</div>
@@ -121,9 +101,7 @@ export default function UsersPage() {
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`text-xs px-2 py-1 rounded-full ${roleBadge[user.role]}`}>
-                    {user.role}
-                  </span>
+                  <span className={`text-xs px-2 py-1 rounded-full ${roleBadge[user.role]}`}>{user.role}</span>
                 </td>
                 <td className="px-4 py-3">
                   <span className="flex items-center gap-2 text-xs">
@@ -133,28 +111,19 @@ export default function UsersPage() {
                 </td>
                 <td className="px-4 py-3 text-xs text-[#888888]">{user.joined}</td>
                 <td className="px-4 py-3">
-                  <select
-                    value={user.role}
-                    onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                    className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-md px-2 py-1 text-xs text-[#888888] mr-2 focus:outline-none"
-                  >
-                    <option>Admin</option>
-                    <option>Seller</option>
-                    <option>User</option>
+                  <select value={user.role} onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                    className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-md px-2 py-1 text-xs text-[#888888] mr-2 focus:outline-none">
+                    <option>Admin</option><option>Seller</option><option>User</option>
                   </select>
-                  <button
-                    onClick={() => handleDelete(user.id)}
-                    className="text-xs text-[#e24b4a] border border-[#2a1a1a] rounded-md px-2 py-1 hover:bg-[#2a1a1a] transition-colors"
-                  >
+                  <button onClick={() => handleDelete(user.id)}
+                    className="text-xs text-[#e24b4a] border border-[#2a1a1a] rounded-md px-2 py-1 hover:bg-[#2a1a1a] transition-colors">
                     Delete
                   </button>
                 </td>
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-sm text-[#666666]">No users found</td>
-              </tr>
+              <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-[#666666]">No users found</td></tr>
             )}
           </tbody>
         </table>
