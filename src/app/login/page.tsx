@@ -1,73 +1,55 @@
-import Link from "next/link";
+"use client";
+import { useState } from "react";
 
-export default function HomePage() {
+export default function LoginPage() {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
-    <div className="min-h-screen bg-[#0a0a0a] font-sans">
-      <nav className="flex items-center justify-between px-8 py-4 border-b border-[#2a2a2a]">
-        <div className="text-xl font-semibold tracking-wide">
-          <span className="text-[#f05a1a]">ZNIYER</span>
-          <span className="text-[#1a8a8a]">BUY</span>
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6">
+      <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-10 w-full max-w-md">
+        <div className="flex flex-col items-center mb-8">
+          <h1 className="text-3xl font-semibold tracking-wide">
+            <span className="text-[#f05a1a]">ZNIYER</span>
+            <span className="text-[#1a8a8a]">BUY</span>
+          </h1>
+          <p className="text-[#f05a1a] text-xs tracking-widest uppercase mt-1">
+            Bringing The Cart To Your Doorstep
+          </p>
         </div>
-        <Link href="/login" className="bg-[#f05a1a] hover:bg-[#c04010] text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors">
-          Admin Login →
-        </Link>
-      </nav>
-      <div className="flex flex-col items-center justify-center px-8 py-16 text-center">
-        <div className="bg-[#2a1a0a] text-[#f05a1a] border border-[#f05a1a] text-xs px-3 py-1 rounded-full mb-5 tracking-wide">
-          🇱🇰 Sri Lanka's Grocery Platform
-        </div>
-        <h1 className="text-4xl font-semibold text-white leading-tight mb-4">
-          Manage Your Platform<br />with <span className="text-[#f05a1a]">Confidence</span>
-        </h1>
-        <p className="text-[#888888] text-sm max-w-md leading-relaxed mb-8">
-          ZniyerBuy Admin Panel gives you full control over users, shops, products and deals — all in one place.
-        </p>
-        <div className="flex gap-3">
-          <Link href="/dashboard" className="bg-[#f05a1a] hover:bg-[#c04010] text-white text-sm font-medium px-6 py-2.5 rounded-lg transition-colors">
-            Go to Dashboard →
-          </Link>
-          <Link href="/login" className="bg-transparent border border-[#2a2a2a] text-[#888888] hover:text-white text-sm px-6 py-2.5 rounded-lg transition-colors">
-            Admin Login
-          </Link>
-        </div>
-      </div>
-      <div className="grid grid-cols-4 gap-3 px-8 pb-8">
-        {[
-          { num: "1,284", label: "Registered users", color: "text-white" },
-          { num: "86", label: "Active shops", color: "text-[#f05a1a]" },
-          { num: "342", label: "Listed products", color: "text-[#1a8a8a]" },
-          { num: "54", label: "Active deals", color: "text-white" },
-        ].map((s) => (
-          <div key={s.label} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4 text-center">
-            <div className={`text-2xl font-medium ${s.color}`}>{s.num}</div>
-            <div className="text-[#888888] text-xs mt-1">{s.label}</div>
+        <h2 className="text-white text-lg font-medium text-center">Admin Portal</h2>
+        <p className="text-[#888888] text-sm text-center mt-1 mb-7">Sign in to manage the platform</p>
+        <div className="mb-5">
+          <label className="text-[#aaaaaa] text-xs block mb-2">Email address</label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666666]">✉</span>
+            <input type="email" placeholder="admin@zniyerbuy.com"
+              className="w-full bg-[#0a0a0a] border border-[#333333] rounded-lg py-2.5 pl-9 pr-4 text-sm text-white placeholder-[#444444] focus:outline-none focus:border-[#f05a1a]" />
           </div>
-        ))}
-      </div>
-      <div className="px-8 pb-8">
-        <h2 className="text-base font-medium text-white text-center mb-5">Everything you need to run the platform</h2>
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { icon: "👥", title: "User Management", desc: "View, manage and assign roles to all registered users on the platform." },
-            { icon: "🏪", title: "Shop Verification", desc: "Review and verify shop registrations, reject or remove shops as needed." },
-            { icon: "🤖", title: "AI Insights", desc: "Get Claude AI-powered recommendations based on your live platform data." },
-          ].map((f) => (
-            <div key={f.title} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-5">
-              <div className="text-2xl mb-3">{f.icon}</div>
-              <div className="text-sm font-medium text-white mb-2">{f.title}</div>
-              <div className="text-xs text-[#888888] leading-relaxed">{f.desc}</div>
-            </div>
-          ))}
         </div>
-      </div>
-      <div className="mx-8 mb-8 bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-8 flex items-center justify-between">
-        <div>
-          <div className="text-base font-medium text-white mb-1">Ready to manage the platform?</div>
-          <div className="text-sm text-[#888888]">Sign in with your admin account to get started.</div>
+        <div className="mb-6">
+          <label className="text-[#aaaaaa] text-xs block mb-2">Password</label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666666]">🔒</span>
+            <input type={showPassword ? "text" : "password"} placeholder="••••••••"
+              className="w-full bg-[#0a0a0a] border border-[#333333] rounded-lg py-2.5 pl-9 pr-10 text-sm text-white placeholder-[#444444] focus:outline-none focus:border-[#f05a1a]" />
+            <button type="button" onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#666666] text-xs">
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
         </div>
-        <Link href="/login" className="bg-[#f05a1a] hover:bg-[#c04010] text-white text-sm font-medium px-6 py-2.5 rounded-lg transition-colors">
-          Admin Login →
-        </Link>
+        <button className="w-full bg-[#f05a1a] hover:bg-[#c04010] text-white font-medium py-3 rounded-lg text-sm transition-colors">
+          Sign in to Admin Panel
+        </button>
+        <div className="flex items-center gap-3 my-5">
+          <div className="flex-1 h-px bg-[#2a2a2a]"></div>
+          <span className="text-[#666666] text-xs">restricted access</span>
+          <div className="flex-1 h-px bg-[#2a2a2a]"></div>
+        </div>
+        <div className="flex items-center gap-3 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg px-4 py-3">
+          <span className="text-[#f05a1a]">🛡</span>
+          <p className="text-[#888888] text-xs">Only accounts with admin role can access this panel</p>
+        </div>
       </div>
     </div>
   );
