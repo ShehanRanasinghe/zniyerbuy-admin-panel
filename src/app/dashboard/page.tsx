@@ -39,17 +39,9 @@ const roleBadge: Record<string, string> = {
 };
 
 const platformData = {
-  totalUsers: 1284,
-  activeUsers: 1190,
-  totalShops: 86,
-  verifiedShops: 61,
-  pendingShops: 18,
-  rejectedShops: 7,
-  totalProducts: 342,
-  flaggedProducts: 6,
-  activeDeals: 54,
-  newUsersThisMonth: 248,
-  dealsThisMonth: 54,
+  totalUsers: 1284, activeUsers: 1190, totalShops: 86, verifiedShops: 61,
+  pendingShops: 18, rejectedShops: 7, totalProducts: 342, flaggedProducts: 6,
+  activeDeals: 54, newUsersThisMonth: 248, dealsThisMonth: 54,
 };
 
 export default function DashboardPage() {
@@ -60,7 +52,6 @@ export default function DashboardPage() {
   const generateInsights = async () => {
     setLoading(true);
     setInsights([]);
-
     try {
       const response = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
@@ -68,11 +59,9 @@ export default function DashboardPage() {
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 1000,
-          messages: [
-            {
-              role: "user",
-              content: `You are an AI analyst for ZniyerBuy, a Sri Lankan grocery delivery platform. Based on the following platform data, give exactly 5 short actionable insights and recommendations for the admin. Return ONLY a JSON array of 5 strings, no extra text.
-
+          messages: [{
+            role: "user",
+            content: `You are an AI analyst for ZniyerBuy, a Sri Lankan grocery delivery platform. Based on the following platform data, give exactly 5 short actionable insights and recommendations for the admin. Return ONLY a JSON array of 5 strings, no extra text.
 Platform data:
 - Total users: ${platformData.totalUsers}
 - Active users: ${platformData.activeUsers}
@@ -85,18 +74,15 @@ Platform data:
 - Active deals: ${platformData.activeDeals}
 - New users this month: ${platformData.newUsersThisMonth}
 - Deals posted this month: ${platformData.dealsThisMonth}`,
-            },
-          ],
+          }],
         }),
       });
-
       const data = await response.json();
       const text = data.content?.[0]?.text || "[]";
       const clean = text.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(clean);
-      setInsights(parsed);
+      setInsights(JSON.parse(clean));
       setGenerated(true);
-    } catch (err) {
+    } catch {
       setInsights(["Failed to generate insights. Please try again."]);
     } finally {
       setLoading(false);
@@ -105,11 +91,9 @@ Platform data:
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] p-6">
-
       <h1 className="text-xl font-medium text-white">Analytics Dashboard</h1>
       <p className="text-[#888888] text-sm mt-1 mb-6">Platform overview and key metrics</p>
 
-      {/* Stats */}
       <div className="grid grid-cols-4 gap-3 mb-6">
         {stats.map((s) => (
           <div key={s.label} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
@@ -121,7 +105,6 @@ Platform data:
         ))}
       </div>
 
-      {/* AI Insights */}
       <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -131,37 +114,26 @@ Platform data:
             </div>
             <p className="text-xs text-[#888888] mt-1">Powered by Claude AI — based on your live platform data</p>
           </div>
-          <button
-            onClick={generateInsights}
-            disabled={loading}
-            className="bg-[#f05a1a] hover:bg-[#c04010] disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-          >
-            {loading ? (
-              <>
-                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                </svg>
-                Analyzing...
-              </>
-            ) : generated ? "Regenerate" : "Generate Insights"}
+          <button onClick={generateInsights} disabled={loading}
+            className="bg-[#f05a1a] hover:bg-[#c04010] disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+            {loading ? (<><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+            </svg>Analyzing...</>) : generated ? "Regenerate" : "Generate Insights"}
           </button>
         </div>
-
         {!generated && !loading && (
           <div className="border border-dashed border-[#2a2a2a] rounded-lg p-6 text-center">
             <div className="text-3xl mb-2">✨</div>
-            <p className="text-sm text-[#888888]">Click "Generate Insights" to get AI-powered recommendations based on your platform data</p>
+            <p className="text-sm text-[#888888]">Click "Generate Insights" to get AI-powered recommendations</p>
           </div>
         )}
-
         {loading && (
           <div className="border border-dashed border-[#2a2a2a] rounded-lg p-6 text-center">
             <div className="text-3xl mb-2 animate-pulse">🤖</div>
             <p className="text-sm text-[#888888]">Claude is analyzing your platform data...</p>
           </div>
         )}
-
         {!loading && insights.length > 0 && (
           <div className="grid grid-cols-1 gap-3">
             {insights.map((insight, i) => (
@@ -174,7 +146,6 @@ Platform data:
         )}
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-2 gap-3 mb-6">
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
           <div className="text-sm font-medium text-white mb-4">New users — last 6 months</div>
@@ -188,7 +159,6 @@ Platform data:
             ))}
           </div>
         </div>
-
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
           <div className="text-sm font-medium text-white mb-4">Deals posted — last 6 months</div>
           <div className="flex items-end gap-2 h-28">
@@ -203,7 +173,6 @@ Platform data:
         </div>
       </div>
 
-      {/* Bottom row */}
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
           <div className="text-sm font-medium text-white mb-4">Recent user registrations</div>
@@ -211,9 +180,7 @@ Platform data:
             <div key={u.name} className="flex items-center justify-between py-2 border-b border-[#0a0a0a] last:border-none">
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
-                  style={{ background: u.color, color: u.textColor }}>
-                  {u.initials}
-                </div>
+                  style={{ background: u.color, color: u.textColor }}>{u.initials}</div>
                 <div>
                   <div className="text-sm text-white">{u.name}</div>
                   <div className="text-xs text-[#666666]">{u.time}</div>
@@ -223,7 +190,6 @@ Platform data:
             </div>
           ))}
         </div>
-
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
           <div className="text-sm font-medium text-white mb-4">Shop status breakdown</div>
           <div className="flex items-center gap-8 mt-4">
@@ -252,7 +218,6 @@ Platform data:
           </div>
         </div>
       </div>
-
     </div>
   );
 }
