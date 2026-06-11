@@ -4,35 +4,18 @@
 // Also provides a "Deals" tab to view products that have active deals.
 
 //FEATURES:
-            //Tab switcher between "Products" and "Deals" views
-            //Summary stat cards (total, active, flagged, deals count)
-            //Search by product name or shop name
-            //Dropdown filters for status and category
-            //Action buttons: Flag/Unflag and Remove per product row
-            //Empty state message when no products match filters
-
-//NOTE: Currently uses hardcoded mock data (initialProducts). In production, this should be replaced with a Supabase or API fetch.
+//  - Fetches real product data from Supabase on page load
+//  - Tab switcher between "Products" and "Deals" views
+//  - Summary stat cards (total, active, flagged, deals count)
+//  - Search by product name or shop name
+//  - Dropdown filters for status and category
+//  - Action buttons: Flag/Unflag and Remove per product row
+//  - Empty state message when no products match filters
+//  - Error handling and loading states
 
 "use client";
-import { useState } from "react";
-
-
-//  MOCK DATA — Sample products for demo/development
-//  Each product has display metadata (initials, avatar colors) plus
-//  business fields (name, shop, category, price, status).
-//  Statuses: "Active" (normal), "Flagged" (reported/suspicious), "Deal" (has active deal)
-
-const initialProducts = [
-  { id: 1, name: "Samba Rice 5kg", shop: "Mahinda Fresh", category: "Rice & Grains", price: "LKR 1,450", status: "Active", initials: "SR", color: "#2a1a0a", textColor: "#f05a1a" },
-  { id: 2, name: "Ceylon Pepper 100g", shop: "Spice Garden", category: "Spices", price: "LKR 380", status: "Flagged", initials: "CP", color: "#2a1a1a", textColor: "#e24b4a" },
-  { id: 3, name: "Green Tomatoes 1kg", shop: "Dambulla Veggies", category: "Vegetables", price: "LKR 220", status: "Active", initials: "GT", color: "#1a1a1a", textColor: "#888888" },
-  { id: 4, name: "Anchor Milk Powder 400g", shop: "Mahinda Fresh", category: "Dairy", price: "LKR 1,890", status: "Deal", initials: "AM", color: "#0a2a2a", textColor: "#1a8a8a" },
-  { id: 5, name: "Kurakkan Flour 1kg", shop: "Dambulla Veggies", category: "Rice & Grains", price: "LKR 560", status: "Active", initials: "KC", color: "#2a1a0a", textColor: "#f05a1a" },
-  { id: 6, name: "Coconut Oil 500ml", shop: "Spice Garden", category: "Cooking Oils", price: "LKR 760", status: "Active", initials: "CO", color: "#1a1a1a", textColor: "#888888" },
-  { id: 7, name: "Dhal 1kg", shop: "Mahinda Fresh", category: "Rice & Grains", price: "LKR 420", status: "Deal", initials: "DH", color: "#0a2a2a", textColor: "#1a8a8a" },
-  { id: 8, name: "Gotukola Bundles", shop: "Dambulla Veggies", category: "Vegetables", price: "LKR 60", status: "Active", initials: "GK", color: "#2a1a0a", textColor: "#f05a1a" },
-];
-
+import { useState, useEffect } from "react";
+import { fetchProducts, flagProduct, unflagProduct, removeProduct } from "@/lib/api";
 
 //  STATUS BADGE STYLES - Tailwind class map for product status badges
 //  Each status gets a unique background + text + border color:
@@ -53,28 +36,91 @@ export default function ProductsPage() {
 
   // State Management
 
-  //products       - mutable product list (supports flag/unflag/remove)
+  //products       - mutable product list fetched from Supabase
   //activeTab      - which tab is selected: "Products" or "Deals"
   //search         - current search query string
   //statusFilter   - dropdown filter for status ("All status" = no filter)
   //categoryFilter - dropdown filter for category ("All categories" = no filter)
+  //loading        - tracks whether data is being fetched
+  //error          - displays error messages from API calls
+  //updatingId     - tracks which product is being updated for loading UI
   
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("Products");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All status");
   const [categoryFilter, setCategoryFilter] = useState("All categories");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  // Fetch products from Supabase on component mount
+  useEffect(() => {
+    const loadProducts = async () => {
+      setLoading(true);
+      setError("");
+      const { error: fetchError, data } = await fetchProducts();
+      
+      if (fetchError) {
+        setError(fetchError);
+      } else {
+        setProducts(data || []);
+      }
+      setLoading(false);
+    };
+
+    loadProducts();
+  }, []);
 
   // Action Handlers 
 
-  //handleFlag   - marks a product as "Flagged" (suspicious/reported)
+  //handleFlag   - marks a product as "Flagged" via API call
   //handleUnflag - marks a flagged product back to "Active"
   //handleRemove - permanently removes a product from the list
-  //In production, these should also trigger API calls to persist changes.
+  //All handlers trigger API calls to persist changes
 
-  const handleFlag = (id: number) => setProducts(products.map((p) => (p.id === id ? { ...p, status: "Flagged" } : p)));
-  const handleUnflag = (id: number) => setProducts(products.map((p) => (p.id === id ? { ...p, status: "Active" } : p)));
-  const handleRemove = (id: number) => setProducts(products.filter((p) => p.id !== id));
+  const handleFlag = async (productId: string) => {
+    setUpdatingId(productId);
+    setError("");
+    const { error: flagError } = await flagProduct(productId);
+    
+    if (flagError) {
+      setError(flagError);
+    } else {
+      setProducts(products.map((p) => (p.id === productId ? { ...p, status: "Flagged" } : p)));
+    }
+    setUpdatingId(null);
+  };
+
+  const handleUnflag = async (productId: string) => {
+    setUpdatingId(productId);
+    setError("");
+    const { error: unflagError } = await unflagProduct(productId);
+    
+    if (unflagError) {
+      setError(unflagError);
+    } else {
+      setProducts(products.map((p) => (p.id === productId ? { ...p, status: "Active" } : p)));
+    }
+    setUpdatingId(null);
+  };
+
+  const handleRemove = async (productId: string, productName: string) => {
+    if (!confirm(`Are you sure you want to remove ${productName}? This action cannot be undone.`)) {
+      return;
+    }
+
+    setUpdatingId(productId);
+    setError("");
+    const { error: removeError } = await removeProduct(productId);
+    
+    if (removeError) {
+      setError(removeError);
+    } else {
+      setProducts(products.filter((p) => p.id !== productId));
+    }
+    setUpdatingId(null);
+  };
 
   // Filtering Logic
       //Combines search, status, category, and tab filters with AND logic.
@@ -101,6 +147,27 @@ export default function ProductsPage() {
         <h1 className="text-xl font-medium text-white">Product & Deal Monitoring</h1>
         <p className="text-[#888888] text-sm mt-1">Monitor all products and active deals on the platform</p>
       </div>
+
+      {/* Error Message Display
+          * Shows error banner if an API call fails
+      */}
+
+      {error && (
+        <div className="mb-4 p-3 bg-[#2a1a1a] border border-[#e24b4a] rounded-lg">
+          <p className="text-[#e24b4a] text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Loading State
+          * Shows loading message while fetching products from Supabase
+      */}
+
+      {loading ? (
+        <div className="text-center py-12">
+          <p className="text-[#888888]">Loading products...</p>
+        </div>
+      ) : (
+        <>
 
       {//Tab Switcher
           //Toggles between "Products" and "Deals" views.
@@ -210,13 +277,16 @@ export default function ProductsPage() {
                 <td className="px-4 py-3 flex items-center gap-2">
                   {product.status === "Flagged" ? (
                     <button onClick={() => handleUnflag(product.id)}
-                      className="text-xs text-[#888888] border border-[#2a2a2a] rounded-md px-2 py-1 hover:bg-[#1a1a1a] transition-colors">Unflag</button>
+                      disabled={updatingId === product.id}
+                      className="text-xs text-[#888888] border border-[#2a2a2a] rounded-md px-2 py-1 hover:bg-[#1a1a1a] transition-colors disabled:opacity-50">Unflag</button>
                   ) : (
                     <button onClick={() => handleFlag(product.id)}
-                      className="text-xs text-[#1a8a8a] border border-[#0a2a2a] rounded-md px-2 py-1 hover:bg-[#0a2a2a] transition-colors">Flag</button>
+                      disabled={updatingId === product.id}
+                      className="text-xs text-[#1a8a8a] border border-[#0a2a2a] rounded-md px-2 py-1 hover:bg-[#0a2a2a] transition-colors disabled:opacity-50">Flag</button>
                   )}
-                  <button onClick={() => handleRemove(product.id)}
-                    className="text-xs text-[#e24b4a] border border-[#2a1a1a] rounded-md px-2 py-1 hover:bg-[#2a1a1a] transition-colors">Remove</button>
+                  <button onClick={() => handleRemove(product.id, product.name)}
+                    disabled={updatingId === product.id}
+                    className="text-xs text-[#e24b4a] border border-[#2a1a1a] rounded-md px-2 py-1 hover:bg-[#2a1a1a] transition-colors disabled:opacity-50">Remove</button>
                 </td>
               </tr>
             ))}
@@ -229,6 +299,9 @@ export default function ProductsPage() {
           </tbody>
         </table>
       </div>
+
+      </>
+      )}
     </div>
   );
 }

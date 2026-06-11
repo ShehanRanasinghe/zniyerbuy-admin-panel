@@ -3,28 +3,18 @@
 // PURPOSE: Allows the admin to view, search, filter, change roles, and delete registered users on the ZniyerBuy platform.
 
 // FEATURES:
+//  - Fetches real user data from Supabase on page load
 //  - Table listing all users with avatar initials, name, email, role, and status
 //  - Real-time search filtering by name or email
 //  - Dropdown filters for role (Admin / Seller / User) and status (Active / Inactive)
-//  - Inline role change via a <select> dropdown per row
-//  - Delete action per user row
+//  - Inline role change via a <select> dropdown per row with API integration
+//  - Delete action per user row with confirmation
 //  - Summary stat cards showing total, active, and seller counts
-
-// NOTE: Currently uses hardcoded mock data (initialUsers). In production this should be replaced with a Supabase or API fetch to load real user records.
+//  - Error handling and loading states
 
 "use client";
-import { useState } from "react";
-
-//  MOCK DATA - Sample users for demo/development
-    //  Each user object includes display metadata (initials, avatar colors) alongside business fields (name, email, role, status, join date).
-    //  Replace with a live data fetch when the backend API is connected.
-
-const initialUsers = [
-  { id: 1, name: "Shehan R.", email: "shehan@zniyerbuy.com", role: "Admin", status: "Active", joined: "Jan 12, 2025", initials: "SR", color: "#2a1a0a", textColor: "#f05a1a" },
-  { id: 2, name: "Amal M.", email: "amal@gmail.com", role: "Seller", status: "Active", joined: "Mar 4, 2025", initials: "AM", color: "#0a2a2a", textColor: "#1a8a8a" },
-  { id: 3, name: "Nimal P.", email: "nimal@gmail.com", role: "User", status: "Inactive", joined: "Feb 18, 2025", initials: "NP", color: "#1a1a1a", textColor: "#888888" },
-  { id: 4, name: "Kavya S.", email: "kavya@gmail.com", role: "User", status: "Active", joined: "Apr 2, 2025", initials: "KS", color: "#1a1a1a", textColor: "#f05a1a" },
-];
+import { useState, useEffect } from "react";
+import { fetchUsers, updateUserRole, deleteUser } from "@/lib/api";
 
 // ROLE BADGE STYLES - Tailwind class map for role badges
 //  Each role gets a distinct background + text + border color combo so the admin can visually distinguish roles at a glance.
@@ -38,20 +28,44 @@ const roleBadge: Record<string, string> = {
 };
 
 export default function UsersPage() {
-  //State Management
-      //  users       - the mutable user list (supports delete & role changes)
-      //  search      - the current search query string
-      //  roleFilter  - dropdown filter value for roles ("All roles" = no filter)
-      //  statusFilter - dropdown filter value for status ("All status" = no filter)
+  // State management
+  // users         - the mutable user list fetched from Supabase
+  // search        - the current search query string
+  // roleFilter    - dropdown filter value for roles ("All roles" = no filter)
+  // statusFilter  - dropdown filter value for status ("All status" = no filter)
+  // loading       - tracks whether data is being fetched
+  // error         - displays error messages from API calls
+  // updatingId    - tracks which user is being updated for loading UI
 
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("All roles");
   const [statusFilter, setStatusFilter] = useState("All status");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  // Fetch users from Supabase on component mount
+  useEffect(() => {
+    const loadUsers = async () => {
+      setLoading(true);
+      setError("");
+      const { error: fetchError, data } = await fetchUsers();
+      
+      if (fetchError) {
+        setError(fetchError);
+      } else {
+        setUsers(data || []);
+      }
+      setLoading(false);
+    };
+
+    loadUsers();
+  }, []);
 
   // Filtering Logic
-      //  Combines search text, role, and status filters with AND logic.
-      //  Search checks both name and email (case-insensitive).
+  // Combines search text, role, and status filters with AND logic.
+  // Search checks both name and email (case-insensitive).
 
   const filtered = users.filter((u) => {
     const matchSearch = u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
@@ -60,17 +74,41 @@ export default function UsersPage() {
     return matchSearch && matchRole && matchStatus;
   });
 
-  //Action Handlers
-  //  handleRoleChange - updates a user's role in the local state
-  //  handleDelete     - removes a user from the local state
-  //  In production, these should also trigger API calls to persist changes.
+  // Action Handlers
 
-  const handleRoleChange = (id: number, newRole: string) => {
-    setUsers(users.map((u) => (u.id === id ? { ...u, role: newRole } : u)));
+  // handleRoleChange - updates a user's role via API and local state
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    setUpdatingId(userId);
+    setError("");
+    const { error: updateError } = await updateUserRole(userId, newRole);
+    
+    if (updateError) {
+      setError(updateError);
+    } else {
+      // Update local state on success
+      setUsers(users.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
+    }
+    setUpdatingId(null);
   };
 
-  const handleDelete = (id: number) => {
-    setUsers(users.filter((u) => u.id !== id));
+  // handleDelete - deletes a user after confirmation
+  const handleDelete = async (userId: string, userName: string) => {
+    // Confirm deletion with user
+    if (!confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`)) {
+      return;
+    }
+
+    setUpdatingId(userId);
+    setError("");
+    const { error: deleteError } = await deleteUser(userId);
+    
+    if (deleteError) {
+      setError(deleteError);
+    } else {
+      // Remove user from local state on success
+      setUsers(users.filter((u) => u.id !== userId));
+    }
+    setUpdatingId(null);
   };
 
   return (
@@ -90,6 +128,27 @@ export default function UsersPage() {
           + Add User
         </button>
       </div>
+
+      {/* Error Message Display
+          * Shows error banner if an API call fails
+      */}
+
+      {error && (
+        <div className="mb-4 p-3 bg-[#2a1a1a] border border-[#e24b4a] rounded-lg">
+          <p className="text-[#e24b4a] text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Loading State
+          * Shows loading message while fetching users from Supabase
+      */}
+
+      {loading ? (
+        <div className="text-center py-12">
+          <p className="text-[#888888]">Loading users...</p>
+        </div>
+      ) : (
+        <>
 
       {/* Summary Stat Cards
        * Three cards showing total users, active users, and sellers.
@@ -191,11 +250,13 @@ export default function UsersPage() {
 
                 <td className="px-4 py-3">
                   <select value={user.role} onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                    className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-md px-2 py-1 text-xs text-[#888888] mr-2 focus:outline-none">
+                    disabled={updatingId === user.id}
+                    className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-md px-2 py-1 text-xs text-[#888888] mr-2 focus:outline-none disabled:opacity-50">
                     <option>Admin</option><option>Seller</option><option>User</option>
                   </select>
-                  <button onClick={() => handleDelete(user.id)}
-                    className="text-xs text-[#e24b4a] border border-[#2a1a1a] rounded-md px-2 py-1 hover:bg-[#2a1a1a] transition-colors">
+                  <button onClick={() => handleDelete(user.id, user.name)}
+                    disabled={updatingId === user.id}
+                    className="text-xs text-[#e24b4a] border border-[#2a1a1a] rounded-md px-2 py-1 hover:bg-[#2a1a1a] transition-colors disabled:opacity-50">
                     Delete
                   </button>
                 </td>
@@ -210,6 +271,9 @@ export default function UsersPage() {
           </tbody>
         </table>
       </div>
+
+      </>
+      )}
     </div>
   );
 }

@@ -1,26 +1,79 @@
-// LoginPage - Admin authentication page 
+// LoginPage - Admin authentication page
 
-//PURPOSE: Provides a login form for administrators to authenticate before accessing the dashboard. Features email and password inputs with a show/hide password toggle.
+// PURPOSE: Authenticates admins using Firebase. Credentials are verified by Firebase auth,
+// then the backend validates the user role and returns admin profile data.
 
-//CURRENT STATUS: 
-    // The form collects email and password values in local state but does NOT yet submit them to any backend API. 
-    // The login button currently has no onClick handler — authentication integration is pending.
+// AUTHENTICATION FLOW:
+//   1. User enters email and password
+//   2. Firebase authenticates the credentials
+//   3. Firebase returns an ID token
+//   4. Backend validates the token and checks admin role
+//   5. If authorized, redirect to dashboard
 
-//TODO: Connect this form to the backend auth endpoint (e.g., Supabase Auth or a custom JWT API) to validate admin credentials. On success, redirect to /dashboard. On failure, show an error message below the form.
+// FEATURES:
+//   - Email and password inputs with show/hide toggle
+//   - Form validation and error handling
+//   - Loading state during authentication
+//   - Role-based access control (admin-only)
+//   - Automatic redirect to dashboard on success
+//   - Error message display on failed login
 
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { loginAdmin } from "@/lib/auth";
 
 export default function LoginPage() {
 
-  //Form State
-      // email        - tracks the email input field value
-      // password     - tracks the password input field value
-      // showPassword - toggles between password masking and plain text display
+  // Form state management
+  // email        - tracks the email input field value
+  // password     - tracks the password input field value
+  // showPassword - toggles between password masking and plain text display
+  // error        - displays authentication error messages
+  // loading      - tracks Firebase auth status to disable button during submission
    
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  // Handle form submission and authentication
+  // Validates input, calls Firebase + backend auth, and redirects on success
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Reset previous errors
+    setError("");
+    
+    // Validate input fields
+    if (!email.trim()) {
+      setError("Email address is required");
+      return;
+    }
+    
+    if (!password) {
+      setError("Password is required");
+      return;
+    }
+
+    // Set loading state and call authentication
+    setLoading(true);
+    const { error: authError, data } = await loginAdmin(email, password);
+    setLoading(false);
+
+    if (authError) {
+      // Display error message on failed authentication
+      setError(authError);
+      return;
+    }
+
+    // Successfully authenticated - redirect to dashboard
+    if (data) {
+      router.push("/dashboard");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6">
@@ -90,13 +143,27 @@ export default function LoginPage() {
         </div>
 
         {//Submit Button
-            // TODO: Add onClick handler to submit email + password to the authentication API. Should handle loading state and error display.
-            // Currently this button is non-functional (no auth backend connected).
+            // Disabled during API call (loading state)
+            // Handles form submission and authentication
          }
 
-        <button className="w-full bg-[#f05a1a] hover:bg-[#c04010] text-white font-medium py-3 rounded-lg text-sm transition-colors">
-          Sign in to Admin Panel
+        <button 
+          onClick={handleLogin}
+          disabled={loading}
+          className="w-full bg-[#f05a1a] hover:bg-[#c04010] disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-3 rounded-lg text-sm transition-colors">
+          {loading ? "Signing in..." : "Sign in to Admin Panel"}
         </button>
+
+        {//Error Message Display
+            // Shows authentication errors in red banner below the submit button
+            // Only rendered if error state is not empty
+        }
+
+        {error && (
+          <div className="mt-4 p-3 bg-[#2a1a1a] border border-[#e24b4a] rounded-lg">
+            <p className="text-[#e24b4a] text-xs text-center">{error}</p>
+          </div>
+        )}
 
         {//Divider
             //Visual separator between the form and the security notice below.

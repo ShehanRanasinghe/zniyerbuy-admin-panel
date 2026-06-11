@@ -2,42 +2,30 @@
 
 // PURPOSE: Allows the admin to view, search, filter, verify, reject, and delete shops registered on the ZniyerBuy platform.
 
-//FEATURES:
-//  Summary stat cards (total, verified, pending, rejected counts)
-//  Search by shop name or owner name
-//  Status dropdown filter (All / Verified / Pending / Rejected)
-//  Action buttons: Verify, Reject, Re-verify, and Delete per shop row
-//  Empty state message when no shops match filters
+// FEATURES:
+//  - Fetches real shop data from Supabase on page load
+//  - Summary stat cards (total, verified, pending, rejected counts)
+//  - Search by shop name or owner name
+//  - Status dropdown filter (All / Verified / Pending / Rejected)
+//  - Action buttons: Verify, Reject, Re-verify, and Delete per shop row
+//  - Empty state message when no shops match filters
+//  - Error handling and loading states
 
 //WORKFLOW:
-//  New shops start as "Pending" and await admin review
-//  Admin can "Verify" to approve or "Reject" to deny a pending shop
-//  Rejected shops can be "Re-verified" if the owner resubmits
-//  Any shop can be permanently deleted
-
-//NOTE: Currently uses hardcoded mock data (initialShops). In production, this should be replaced with a Supabase or API fetch.
+//  - New shops start as "Pending" and await admin review
+//  - Admin can "Verify" to approve or "Reject" to deny a pending shop
+//  - Rejected shops can be "Re-verified" if the owner resubmits
+//  - Any shop can be permanently deleted
 
 "use client";
-import { useState } from "react";
-
-//  MOCK DATA - Sample shops for demo/development
-    //  Each shop has display metadata (initials, avatar colors) plus business fields (name, owner, category, status, registration date).
-    //  Statuses: "Verified" (approved), "Pending" (awaiting review), "Rejected" (denied)
-
-const initialShops = [
-  { id: 1, name: "TechFix Store", owner: "Amal M.", category: "Electronics", status: "Verified", registered: "Mar 4, 2025", initials: "TF", color: "#2a1a0a", textColor: "#f05a1a" },
-  { id: 2, name: "Style & Fashion", owner: "Kavya S.", category: "Clothing", status: "Pending", registered: "Apr 10, 2025", initials: "SF", color: "#0a2a2a", textColor: "#1a8a8a" },
-  { id: 3, name: "Fresh Greens", owner: "Nimal P.", category: "Groceries", status: "Pending", registered: "Apr 15, 2025", initials: "FG", color: "#1a1a1a", textColor: "#888888" },
-  { id: 4, name: "Bargain Hub", owner: "Ruwan K.", category: "General", status: "Rejected", registered: "Feb 22, 2025", initials: "BH", color: "#2a1a1a", textColor: "#e24b4a" },
-];
+import { useState, useEffect } from "react";
+import { fetchShops, verifyShop, rejectShop, deleteShop } from "@/lib/api";
 
 //STATUS BADGE STYLES - Tailwind class map for shop status badges
     //  Each status gets a unique background + text + border color:
         //  Verified: orange theme (approved shops)
         //  Pending: teal theme (awaiting admin review)
         //  Rejected: red theme (denied shops)
-
-//NOTE: This is intentionally different from the statusBadge in products/page.tsx, which uses Active/Flagged/Deal statuses for product-specific context.
 
 const statusBadge: Record<string, string> = {
   Verified: "bg-[#2a1a0a] text-[#f05a1a] border border-[#f05a1a]",
@@ -48,13 +36,37 @@ const statusBadge: Record<string, string> = {
 export default function ShopsPage() {
 
 //State Management
-    // shops        - mutable shop list (supports verify/reject/delete)
+    // shops        - mutable shop list fetched from Supabase
     // search       - current search query string
     // statusFilter - dropdown filter for status ("All status" = no filter)
+    // loading      - tracks whether data is being fetched
+    // error        - displays error messages from API calls
+    // updatingId   - tracks which shop is being updated for loading UI
 
-  const [shops, setShops] = useState(initialShops);
+  const [shops, setShops] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All status");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  // Fetch shops from Supabase on component mount
+  useEffect(() => {
+    const loadShops = async () => {
+      setLoading(true);
+      setError("");
+      const { error: fetchError, data } = await fetchShops();
+      
+      if (fetchError) {
+        setError(fetchError);
+      } else {
+        setShops(data || []);
+      }
+      setLoading(false);
+    };
+
+    loadShops();
+  }, []);
 
   //Filtering Logic
       //  Combines search text and status filter with AND logic.
@@ -70,11 +82,50 @@ export default function ShopsPage() {
       // handleVerify — sets a shop's status to "Verified" (admin approval)
       // handleReject — sets a shop's status to "Rejected" (admin denial)
       // handleDelete — permanently removes a shop from the list
-      // In production, these should also trigger API calls to persist changes.
+      // All handlers trigger API calls to persist changes
 
-  const handleVerify = (id: number) => setShops(shops.map((s) => (s.id === id ? { ...s, status: "Verified" } : s)));
-  const handleReject = (id: number) => setShops(shops.map((s) => (s.id === id ? { ...s, status: "Rejected" } : s)));
-  const handleDelete = (id: number) => setShops(shops.filter((s) => s.id !== id));
+  const handleVerify = async (shopId: string) => {
+    setUpdatingId(shopId);
+    setError("");
+    const { error: verifyError } = await verifyShop(shopId);
+    
+    if (verifyError) {
+      setError(verifyError);
+    } else {
+      setShops(shops.map((s) => (s.id === shopId ? { ...s, status: "Verified" } : s)));
+    }
+    setUpdatingId(null);
+  };
+
+  const handleReject = async (shopId: string) => {
+    setUpdatingId(shopId);
+    setError("");
+    const { error: rejectError } = await rejectShop(shopId);
+    
+    if (rejectError) {
+      setError(rejectError);
+    } else {
+      setShops(shops.map((s) => (s.id === shopId ? { ...s, status: "Rejected" } : s)));
+    }
+    setUpdatingId(null);
+  };
+
+  const handleDelete = async (shopId: string, shopName: string) => {
+    if (!confirm(`Are you sure you want to delete ${shopName}? This action cannot be undone.`)) {
+      return;
+    }
+
+    setUpdatingId(shopId);
+    setError("");
+    const { error: deleteError } = await deleteShop(shopId);
+    
+    if (deleteError) {
+      setError(deleteError);
+    } else {
+      setShops(shops.filter((s) => s.id !== shopId));
+    }
+    setUpdatingId(null);
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] p-6">
@@ -87,6 +138,27 @@ export default function ShopsPage() {
           <p className="text-[#888888] text-sm mt-1">Verify, manage and monitor all shops</p>
         </div>
       </div>
+
+      {/* Error Message Display
+          * Shows error banner if an API call fails
+      */}
+
+      {error && (
+        <div className="mb-4 p-3 bg-[#2a1a1a] border border-[#e24b4a] rounded-lg">
+          <p className="text-[#e24b4a] text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Loading State
+          * Shows loading message while fetching shops from Supabase
+      */}
+
+      {loading ? (
+        <div className="text-center py-12">
+          <p className="text-[#888888]">Loading shops...</p>
+        </div>
+      ) : (
+        <>
 
       {/*Summary Stat Cards
           * Four cards showing total, verified, pending, and rejected counts.
@@ -187,7 +259,8 @@ export default function ShopsPage() {
 
                   {shop.status !== "Verified" && (
                     <button onClick={() => handleVerify(shop.id)}
-                      className="text-xs text-[#f05a1a] border border-[#f05a1a] rounded-md px-2 py-1 hover:bg-[#2a1a0a] transition-colors">
+                      disabled={updatingId === shop.id}
+                      className="text-xs text-[#f05a1a] border border-[#f05a1a] rounded-md px-2 py-1 hover:bg-[#2a1a0a] transition-colors disabled:opacity-50">
                       {shop.status === "Rejected" ? "Re-verify" : "Verify"}
                     </button>
                   )}
@@ -196,15 +269,17 @@ export default function ShopsPage() {
 
                   {shop.status === "Pending" && (
                     <button onClick={() => handleReject(shop.id)}
-                      className="text-xs text-[#1a8a8a] border border-[#0a2a2a] rounded-md px-2 py-1 hover:bg-[#0a2a2a] transition-colors">
+                      disabled={updatingId === shop.id}
+                      className="text-xs text-[#1a8a8a] border border-[#0a2a2a] rounded-md px-2 py-1 hover:bg-[#0a2a2a] transition-colors disabled:opacity-50">
                       Reject
                     </button>
                   )}
 
                   {/* Delete button — always available for all shops */}
 
-                  <button onClick={() => handleDelete(shop.id)}
-                    className="text-xs text-[#e24b4a] border border-[#2a1a1a] rounded-md px-2 py-1 hover:bg-[#2a1a1a] transition-colors">
+                  <button onClick={() => handleDelete(shop.id, shop.name)}
+                    disabled={updatingId === shop.id}
+                    className="text-xs text-[#e24b4a] border border-[#2a1a1a] rounded-md px-2 py-1 hover:bg-[#2a1a1a] transition-colors disabled:opacity-50">
                     Delete
                   </button>
                 </td>
@@ -219,6 +294,9 @@ export default function ShopsPage() {
           </tbody>
         </table>
       </div>
+
+      </>
+      )}
     </div>
   );
 }
