@@ -1,1 +1,44 @@
+/* globals.css — Global styles for the ZniyerBuy Admin Panel
+
+ * PURPOSE: Imports Tailwind CSS utilities and sets base-level styles that apply across the entire application. 
+ * This ensures a consistent dark theme foundation so individual page components don't need to repeat background/text color declarations on their root elements.
+ */
+
+/* Tailwind CSS Import
+ * Loads all Tailwind utility classes (v4 syntax).
+ * This single import brings in base, components, and utilities layers.
+*/
+
 @import "tailwindcss";
+
+/* Base Dark Theme
+ * Sets the default background and text colors to match the admin panel's
+ * dark design system (#0a0a0a background, white text).
+ * This prevents any flash of white background on page load.
+*/
+body {
+  background-color: #0a0a0a;
+  color: #ffffff;
+}
+
+/* Custom Scrollbar
+ * Styles the browser scrollbar to blend with the dark theme.
+ * A thin, subtle scrollbar avoids visual clutter on data-heavy pages like the Users table or Products table.
+*/
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3a;
+}
