@@ -1,96 +1,121 @@
 "use client";
-import { useState } from "react";
-
-const initialUsers = [
-<<<<<<< HEAD
-  { id: 1, name: "Shehan R.", email: "shehan@zniyerbuy.com", role: "Admin", status: "Active", joined: "Jan 12, 2025", initials: "SR", color: "#1a3a2a", textColor: "#1d9e75" },
-  { id: 2, name: "Amal M.", email: "amal@gmail.com", role: "Seller", status: "Active", joined: "Mar 4, 2025", initials: "AM", color: "#2a2a10", textColor: "#f0a500" },
-  { id: 3, name: "Nimal P.", email: "nimal@gmail.com", role: "User", status: "Inactive", joined: "Feb 18, 2025", initials: "NP", color: "#1a2a3a", textColor: "#6b9aaa" },
-  { id: 4, name: "Kavya S.", email: "kavya@gmail.com", role: "User", status: "Active", joined: "Apr 2, 2025", initials: "KS", color: "#2a1a2a", textColor: "#c084fc" },
-];
-
-const roleBadge: Record<string, string> = {
-  Admin: "bg-[#1a3a2a] text-[#1d9e75] border border-[#1d9e75]",
-  Seller: "bg-[#2a2a10] text-[#f0a500] border border-[#f0a500]",
-  User: "bg-[#1a2a3a] text-[#6b9aaa] border border-[#4a7a8a]",
-=======
-  { id: 1, name: "Shehan R.", email: "shehan@zniyerbuy.com", role: "Admin", status: "Active", joined: "Jan 12, 2025", initials: "SR", color: "#2a1a0a", textColor: "#f05a1a" },
-  { id: 2, name: "Amal M.", email: "amal@gmail.com", role: "Seller", status: "Active", joined: "Mar 4, 2025", initials: "AM", color: "#0a2a2a", textColor: "#1a8a8a" },
-  { id: 3, name: "Nimal P.", email: "nimal@gmail.com", role: "User", status: "Inactive", joined: "Feb 18, 2025", initials: "NP", color: "#1a1a1a", textColor: "#888888" },
-  { id: 4, name: "Kavya S.", email: "kavya@gmail.com", role: "User", status: "Active", joined: "Apr 2, 2025", initials: "KS", color: "#1a1a1a", textColor: "#f05a1a" },
-];
+import { useState, useEffect } from "react";
+import { fetchUsers, updateUserRole, deleteUser } from "@/lib/api";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faUsers, faUserShield, faStore, faSearch,
+  faTrash, faSpinner, faUserPlus,
+} from "@fortawesome/free-solid-svg-icons";
 
 const roleBadge: Record<string, string> = {
   Admin: "bg-[#2a1a0a] text-[#f05a1a] border border-[#f05a1a]",
   Seller: "bg-[#0a2a2a] text-[#1a8a8a] border border-[#1a8a8a]",
-  User: "bg-[#1a1a1a] text-[#888888] border border-[#666666]",
->>>>>>> 853fb6ddb459281386b0b042b6acf72d989ae572
+  User: "bg-[#1a1a1a] text-[#888] border border-[#333]",
 };
 
 export default function UsersPage() {
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("All roles");
   const [statusFilter, setStatusFilter] = useState("All status");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      setError("");
+      const { error: e, data } = await fetchUsers();
+      if (e) setError(e);
+      else setUsers(data || []);
+      setLoading(false);
+    };
+    load();
+  }, []);
 
   const filtered = users.filter((u) => {
-    const matchSearch = u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
+    const q = search.toLowerCase();
+    const matchSearch = !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
     const matchRole = roleFilter === "All roles" || u.role === roleFilter;
     const matchStatus = statusFilter === "All status" || u.status === statusFilter;
     return matchSearch && matchRole && matchStatus;
   });
 
-  const handleRoleChange = (id: number, newRole: string) => {
-    setUsers(users.map((u) => (u.id === id ? { ...u, role: newRole } : u)));
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    setUpdatingId(userId);
+    setError("");
+    const { error: e } = await updateUserRole(userId, newRole);
+    if (e) setError(e);
+    else setUsers(users.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
+    setUpdatingId(null);
   };
 
-  const handleDelete = (id: number) => {
-    setUsers(users.filter((u) => u.id !== id));
+  const handleDelete = async (userId: string, userName: string) => {
+    if (!confirm(`Delete ${userName}? This cannot be undone.`)) return;
+    setUpdatingId(userId);
+    setError("");
+    const { error: e } = await deleteUser(userId);
+    if (e) setError(e);
+    else setUsers(users.filter((u) => u.id !== userId));
+    setUpdatingId(null);
   };
+
+  const totalActive = users.filter((u) => u.status === "Active").length;
+  const totalSellers = users.filter((u) => u.role === "Seller").length;
+  const totalAdmins = users.filter((u) => u.role === "Admin").length;
 
   return (
-<<<<<<< HEAD
-    <div className="min-h-screen bg-[#0d2128] p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="min-h-screen bg-[#0a0a0a] p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl font-medium text-white">User Management</h1>
-          <p className="text-[#6b9aaa] text-sm mt-1">Manage all registered users</p>
+          <h1 className="text-xl font-semibold text-white">User Management</h1>
+          <p className="text-[#666] text-sm mt-1">Manage all registered users on the platform</p>
         </div>
-        <button className="bg-[#1d9e75] hover:bg-[#0f6e56] text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
-          + Add User
+        <button className="flex items-center gap-2 bg-[#f05a1a] hover:bg-[#c04010] text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors w-fit">
+          <FontAwesomeIcon icon={faUserPlus} className="w-3.5 h-3.5" />
+          Add User
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="bg-[#112a33] border border-[#1a4a5a] rounded-xl p-4">
-          <div className="text-2xl font-medium text-white">{users.length}</div>
-          <div className="text-[#6b9aaa] text-xs mt-1">Total users</div>
+      {error && (
+        <div className="mb-4 p-3 bg-[#2a1a1a] border border-[#e24b4a] rounded-lg">
+          <p className="text-[#e24b4a] text-sm">{error}</p>
         </div>
-        <div className="bg-[#112a33] border border-[#1a4a5a] rounded-xl p-4">
-          <div className="text-2xl font-medium text-[#1d9e75]">{users.filter((u) => u.status === "Active").length}</div>
-          <div className="text-[#6b9aaa] text-xs mt-1">Active</div>
-        </div>
-        <div className="bg-[#112a33] border border-[#1a4a5a] rounded-xl p-4">
-          <div className="text-2xl font-medium text-[#f0a500]">{users.filter((u) => u.role === "Seller").length}</div>
-          <div className="text-[#6b9aaa] text-xs mt-1">Sellers</div>
-        </div>
+      )}
+
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {[
+          { icon: faUsers, value: users.length, label: "Total Users", color: "#f05a1a" },
+          { icon: faUserShield, value: totalActive, label: "Active", color: "#1a8a8a" },
+          { icon: faStore, value: totalSellers, label: "Sellers", color: "#f05a1a" },
+          { icon: faUserShield, value: totalAdmins, label: "Admins", color: "#e24b4a" },
+        ].map((s) => (
+          <div key={s.label} className="bg-[#111] border border-[#222] rounded-xl p-4">
+            <FontAwesomeIcon icon={s.icon} className="w-4 h-4 mb-2" style={{ color: s.color }} />
+            <div className="text-xl font-semibold text-white">{loading ? "—" : s.value}</div>
+            <div className="text-[#666] text-xs mt-1">{s.label}</div>
+          </div>
+        ))}
       </div>
 
-      <div className="flex gap-3 mb-5">
+      {/* Search & Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <div className="flex-1 relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4a7a8a] text-sm">🔍</span>
+          <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#555]" />
           <input
             type="text"
             placeholder="Search by name or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[#112a33] border border-[#1a4a5a] rounded-lg py-2 pl-9 pr-4 text-sm text-white placeholder-[#3a6070] focus:outline-none focus:border-[#1d9e75]"
+            className="w-full bg-[#111] border border-[#222] rounded-lg py-2 pl-9 pr-4 text-sm text-white placeholder-[#444] focus:outline-none focus:border-[#f05a1a] transition-colors"
           />
         </div>
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="bg-[#112a33] border border-[#1a4a5a] rounded-lg px-3 py-2 text-sm text-[#6b9aaa] focus:outline-none"
+          className="bg-[#111] border border-[#222] rounded-lg px-3 py-2 text-sm text-[#888] focus:outline-none focus:border-[#f05a1a] transition-colors"
         >
           <option>All roles</option>
           <option>Admin</option>
@@ -100,7 +125,7 @@ export default function UsersPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-[#112a33] border border-[#1a4a5a] rounded-lg px-3 py-2 text-sm text-[#6b9aaa] focus:outline-none"
+          className="bg-[#111] border border-[#222] rounded-lg px-3 py-2 text-sm text-[#888] focus:outline-none focus:border-[#f05a1a] transition-colors"
         >
           <option>All status</option>
           <option>Active</option>
@@ -108,156 +133,89 @@ export default function UsersPage() {
         </select>
       </div>
 
-      <div className="bg-[#112a33] border border-[#1a4a5a] rounded-xl overflow-hidden">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-[#0d2128]">
-              <th className="text-left px-4 py-3 text-xs text-[#4a7a8a] font-medium uppercase tracking-wider">User</th>
-              <th className="text-left px-4 py-3 text-xs text-[#4a7a8a] font-medium uppercase tracking-wider">Role</th>
-              <th className="text-left px-4 py-3 text-xs text-[#4a7a8a] font-medium uppercase tracking-wider">Status</th>
-              <th className="text-left px-4 py-3 text-xs text-[#4a7a8a] font-medium uppercase tracking-wider">Joined</th>
-              <th className="text-left px-4 py-3 text-xs text-[#4a7a8a] font-medium uppercase tracking-wider">Actions</th>
-=======
-    <div className="min-h-screen bg-[#0a0a0a] p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-medium text-white">User Management</h1>
-          <p className="text-[#888888] text-sm mt-1">Manage all registered users</p>
+      {loading ? (
+        <div className="flex items-center justify-center py-16 gap-3 text-[#555]">
+          <FontAwesomeIcon icon={faSpinner} className="w-5 h-5 animate-spin" />
+          <span className="text-sm">Loading users...</span>
         </div>
-        <button className="bg-[#f05a1a] hover:bg-[#c04010] text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-          + Add User
-        </button>
-      </div>
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
-          <div className="text-2xl font-medium text-white">{users.length}</div>
-          <div className="text-[#888888] text-xs mt-1">Total users</div>
+      ) : (
+        <div className="bg-[#111] border border-[#222] rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-[#0d0d0d]">
+                  {["User", "Role", "Status", "Joined", "Actions"].map((h) => (
+                    <th key={h} className="text-left px-4 py-3 text-xs text-[#555] font-medium uppercase tracking-wider whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((user) => (
+                  <tr key={user.id} className="border-t border-[#0d0d0d] hover:bg-[#161616] transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
+                          style={{ background: user.color || "#1a1a1a", color: user.textColor || "#888" }}
+                        >
+                          {user.initials}
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-white">{user.name}</div>
+                          <div className="text-xs text-[#555]">{user.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${roleBadge[user.role] || roleBadge.User}`}>{user.role}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="flex items-center gap-1.5 text-xs">
+                        <span className={`w-1.5 h-1.5 rounded-full ${user.status === "Active" ? "bg-[#1a8a1a]" : "bg-[#555]"}`} />
+                        <span className={user.status === "Active" ? "text-[#1a8a8a]" : "text-[#555]"}>{user.status}</span>
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-[#666] whitespace-nowrap">{user.joined}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={user.role}
+                          onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                          disabled={updatingId === user.id}
+                          className="bg-[#0a0a0a] border border-[#222] rounded px-2 py-1 text-xs text-[#888] focus:outline-none disabled:opacity-50 focus:border-[#f05a1a] transition-colors"
+                        >
+                          <option>Admin</option>
+                          <option>Seller</option>
+                          <option>User</option>
+                        </select>
+                        <button
+                          onClick={() => handleDelete(user.id, user.name)}
+                          disabled={updatingId === user.id}
+                          className="text-xs text-[#e24b4a] border border-[#2a1a1a] rounded px-2 py-1 hover:bg-[#2a1a1a] transition-colors disabled:opacity-50 flex items-center gap-1"
+                        >
+                          {updatingId === user.id
+                            ? <FontAwesomeIcon icon={faSpinner} className="w-3 h-3 animate-spin" />
+                            : <FontAwesomeIcon icon={faTrash} className="w-3 h-3" />}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-12 text-center text-sm text-[#555]">
+                      No users found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-4 py-2.5 bg-[#0d0d0d] border-t border-[#1a1a1a] text-xs text-[#555]">
+            Showing {filtered.length} of {users.length} users
+          </div>
         </div>
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
-          <div className="text-2xl font-medium text-[#f05a1a]">{users.filter((u) => u.status === "Active").length}</div>
-          <div className="text-[#888888] text-xs mt-1">Active</div>
-        </div>
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
-          <div className="text-2xl font-medium text-[#1a8a8a]">{users.filter((u) => u.role === "Seller").length}</div>
-          <div className="text-[#888888] text-xs mt-1">Sellers</div>
-        </div>
-      </div>
-      <div className="flex gap-3 mb-5">
-        <div className="flex-1 relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666666] text-sm">🔍</span>
-          <input type="text" placeholder="Search by name or email..." value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg py-2 pl-9 pr-4 text-sm text-white placeholder-[#444444] focus:outline-none focus:border-[#f05a1a]" />
-        </div>
-        <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}
-          className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#888888] focus:outline-none">
-          <option>All roles</option><option>Admin</option><option>Seller</option><option>User</option>
-        </select>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#888888] focus:outline-none">
-          <option>All status</option><option>Active</option><option>Inactive</option>
-        </select>
-      </div>
-      <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-[#0a0a0a]">
-              <th className="text-left px-4 py-3 text-xs text-[#666666] font-medium uppercase tracking-wider">User</th>
-              <th className="text-left px-4 py-3 text-xs text-[#666666] font-medium uppercase tracking-wider">Role</th>
-              <th className="text-left px-4 py-3 text-xs text-[#666666] font-medium uppercase tracking-wider">Status</th>
-              <th className="text-left px-4 py-3 text-xs text-[#666666] font-medium uppercase tracking-wider">Joined</th>
-              <th className="text-left px-4 py-3 text-xs text-[#666666] font-medium uppercase tracking-wider">Actions</th>
->>>>>>> 853fb6ddb459281386b0b042b6acf72d989ae572
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((user) => (
-<<<<<<< HEAD
-              <tr key={user.id} className="border-t border-[#0d2128] hover:bg-[#0f2530] transition-colors">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
-                      style={{ background: user.color, color: user.textColor }}>
-                      {user.initials}
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-white">{user.name}</div>
-                      <div className="text-xs text-[#4a7a8a]">{user.email}</div>
-=======
-              <tr key={user.id} className="border-t border-[#0a0a0a] hover:bg-[#222222] transition-colors">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
-                      style={{ background: user.color, color: user.textColor }}>{user.initials}</div>
-                    <div>
-                      <div className="text-sm font-medium text-white">{user.name}</div>
-                      <div className="text-xs text-[#666666]">{user.email}</div>
->>>>>>> 853fb6ddb459281386b0b042b6acf72d989ae572
-                    </div>
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-<<<<<<< HEAD
-                  <span className={`text-xs px-2 py-1 rounded-full ${roleBadge[user.role]}`}>
-                    {user.role}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <span className="flex items-center gap-2 text-xs">
-                    <span className={`w-2 h-2 rounded-full ${user.status === "Active" ? "bg-[#1d9e75]" : "bg-[#4a7a8a]"}`}></span>
-                    <span className={user.status === "Active" ? "text-[#1d9e75]" : "text-[#4a7a8a]"}>{user.status}</span>
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-xs text-[#6b9aaa]">{user.joined}</td>
-                <td className="px-4 py-3">
-                  <select
-                    value={user.role}
-                    onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                    className="bg-[#0d2128] border border-[#1a4a5a] rounded-md px-2 py-1 text-xs text-[#6b9aaa] mr-2 focus:outline-none"
-                  >
-                    <option>Admin</option>
-                    <option>Seller</option>
-                    <option>User</option>
-                  </select>
-                  <button
-                    onClick={() => handleDelete(user.id)}
-                    className="text-xs text-[#e24b4a] border border-[#3a1a1a] rounded-md px-2 py-1 hover:bg-[#3a1a1a] transition-colors"
-                  >
-=======
-                  <span className={`text-xs px-2 py-1 rounded-full ${roleBadge[user.role]}`}>{user.role}</span>
-                </td>
-                <td className="px-4 py-3">
-                  <span className="flex items-center gap-2 text-xs">
-                    <span className={`w-2 h-2 rounded-full ${user.status === "Active" ? "bg-[#f05a1a]" : "bg-[#666666]"}`}></span>
-                    <span className={user.status === "Active" ? "text-[#f05a1a]" : "text-[#666666]"}>{user.status}</span>
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-xs text-[#888888]">{user.joined}</td>
-                <td className="px-4 py-3">
-                  <select value={user.role} onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                    className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-md px-2 py-1 text-xs text-[#888888] mr-2 focus:outline-none">
-                    <option>Admin</option><option>Seller</option><option>User</option>
-                  </select>
-                  <button onClick={() => handleDelete(user.id)}
-                    className="text-xs text-[#e24b4a] border border-[#2a1a1a] rounded-md px-2 py-1 hover:bg-[#2a1a1a] transition-colors">
->>>>>>> 853fb6ddb459281386b0b042b6acf72d989ae572
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 && (
-<<<<<<< HEAD
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-sm text-[#4a7a8a]">No users found</td>
-              </tr>
-=======
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-[#666666]">No users found</td></tr>
->>>>>>> 853fb6ddb459281386b0b042b6acf72d989ae572
-            )}
-          </tbody>
-        </table>
-      </div>
+      )}
     </div>
   );
 }
