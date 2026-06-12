@@ -1,119 +1,175 @@
-//HomePage - Landing page for the ZniyerBuy Admin Panel
+// HomePage - Landing page for the ZniyerBuy Admin Panel
 
-// PURPOSE: Public-facing landing page that introduces the admin panel to authorized administrators. 
-// Showcases platform stats, key features, and provides navigation to the login page and dashboard.
+// PURPOSE: Professional landing page that introduces the admin panel to authorized administrators.
+// Showcases key features and provides navigation to the login page.
 
-// NOTE: This is a server component (no "use client" directive). It renders static content with no client-side interactivity - just links.
+// NOTE: This is a client component to use Font Awesome icons with proper rendering.
 
-// IMPORTANT: The stat numbers here (1,284 users, 86 shops, etc.) are hardcoded demo values for the landing page marketing display. 
-// They are NOT live data. The actual dashboard page fetches real-time stats from Supabase separately. These values are intentionally static.
+"use client";
 
 import Link from "next/link";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faUsers,
+  faStore,
+  faChartLine,
+  faShieldHalved,
+  faGear,
+  faBell,
+  faArrowRight,
+  faLock,
+} from "@fortawesome/free-solid-svg-icons";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] font-sans">
-
-      {//Top Navigation Bar
-          //Contains the ZNIYERBUY brand logo (split into two colored spans) and a CTA button linking to the admin login page.
-      }
-
-      <nav className="flex items-center justify-between px-8 py-4 border-b border-[#2a2a2a]">
-        <div className="text-xl font-semibold tracking-wide">
+      {/* Top Navigation Bar - Responsive header with brand and login CTA */}
+      <nav className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4 border-b border-[#2a2a2a]">
+        <div className="text-lg sm:text-xl font-semibold tracking-wide">
           <span className="text-[#f05a1a]">ZNIYER</span>
           <span className="text-[#1a8a8a]">BUY</span>
         </div>
-        <Link href="/login" className="bg-[#f05a1a] hover:bg-[#c04010] text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors">
-          Admin Login →
+        <Link
+          href="/login"
+          className="bg-[#f05a1a] hover:bg-[#c04010] text-white text-xs sm:text-sm font-medium px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
+        >
+          <FontAwesomeIcon icon={faLock} className="w-3 h-3 sm:w-4 sm:h-4" />
+          <span>Admin Login</span>
         </Link>
       </nav>
 
-      {//Hero Section
-          //Main headline area with:
-              //A pill badge identifying the platform as Sri Lankan
-              //A large headline with an accent-colored keyword
-              //A descriptive subtitle about what the admin panel does
-              //Two CTA buttons: primary (go to dashboard) and secondary (login)
-      }
-
-      <div className="flex flex-col items-center justify-center px-8 py-16 text-center">
-        <div className="bg-[#2a1a0a] text-[#f05a1a] border border-[#f05a1a] text-xs px-3 py-1 rounded-full mb-5 tracking-wide">
-          🇱🇰 Sri Lanka's Grocery Platform
+      {/* Hero Section - Main headline and value proposition */}
+      <div className="flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 text-center">
+        <div className="bg-[#2a1a0a] text-[#f05a1a] border border-[#f05a1a]/30 text-xs sm:text-sm px-4 py-2 rounded-full mb-6 tracking-wide inline-flex items-center gap-2 backdrop-blur-sm">
+          <FontAwesomeIcon icon={faShieldHalved} className="w-3 h-3" />
+          <span>Sri Lanka's Grocery Platform</span>
         </div>
-        <h1 className="text-4xl font-semibold text-white leading-tight mb-4">
-          Manage Your Platform<br />with <span className="text-[#f05a1a]">Confidence</span>
+        
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-4 sm:mb-6 max-w-4xl">
+          Manage Your Platform with{" "}
+          <span className="text-[#f05a1a] relative">
+            Confidence
+            <span className="absolute bottom-0 left-0 w-full h-1 bg-[#f05a1a]/20 rounded"></span>
+          </span>
         </h1>
-        <p className="text-[#888888] text-sm max-w-md leading-relaxed mb-8">
-          ZniyerBuy Admin Panel gives you full control over users, shops, products and deals — all in one place.
+        
+        <p className="text-[#888888] text-sm sm:text-base max-w-2xl leading-relaxed mb-8 sm:mb-10 px-4">
+          ZniyerBuy Admin Panel gives you full control over users, shops, products, and deals. 
+          Streamline operations, monitor performance, and make data-driven decisions all in one place.
         </p>
-        <div className="flex gap-3">
-          <Link href="/dashboard" className="bg-[#f05a1a] hover:bg-[#c04010] text-white text-sm font-medium px-6 py-2.5 rounded-lg transition-colors">
-            Go to Dashboard →
-          </Link>
-          <Link href="/login" className="bg-transparent border border-[#2a2a2a] text-[#888888] hover:text-white text-sm px-6 py-2.5 rounded-lg transition-colors">
-            Admin Login
-          </Link>
-        </div>
-      </div>
-
-      {//Platform Stats Grid
-          //Four stat cards showing demo numbers for users, shops, products, and deals. These are static marketing figures for the landing page.
-          //Each card uses a different accent color for visual distinction.
-
-      //NOTE: Not connected to live data - purely presentational.
-      }
-
-      <div className="grid grid-cols-4 gap-3 px-8 pb-8">
-        {[
-          { num: "1,284", label: "Registered users", color: "text-white" },
-          { num: "86", label: "Active shops", color: "text-[#f05a1a]" },
-          { num: "342", label: "Listed products", color: "text-[#1a8a8a]" },
-          { num: "54", label: "Active deals", color: "text-white" },
-        ].map((s) => (
-          <div key={s.label} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4 text-center">
-            <div className={`text-2xl font-medium ${s.color}`}>{s.num}</div>
-            <div className="text-[#888888] text-xs mt-1">{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {//Features Section
-          //Three feature cards highlighting key admin panel capabilities:
-              //User Management, Shop Verification, and AI Insights.
-              //Each card has an icon, title, and brief description.
-      }
-
-      <div className="px-8 pb-8">
-        <h2 className="text-base font-medium text-white text-center mb-5">Everything you need to run the platform</h2>
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { icon: "👥", title: "User Management", desc: "View, manage and assign roles to all registered users on the platform." },
-            { icon: "🏪", title: "Shop Verification", desc: "Review and verify shop registrations, reject or remove shops as needed." },
-            { icon: "🤖", title: "AI Insights", desc: "Get AI-powered recommendations based on your live platform data." },
-          ].map((f) => (
-            <div key={f.title} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-5">
-              <div className="text-2xl mb-3">{f.icon}</div>
-              <div className="text-sm font-medium text-white mb-2">{f.title}</div>
-              <div className="text-xs text-[#888888] leading-relaxed">{f.desc}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {//Call-To-Action Banner
-          // A full-width card at the bottom encouraging the admin to log in.
-          // Contains a heading, subtitle, and a prominent login button.
-      }
-
-      <div className="mx-8 mb-8 bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-8 flex items-center justify-between">
-        <div>
-          <div className="text-base font-medium text-white mb-1">Ready to manage the platform?</div>
-          <div className="text-sm text-[#888888]">Sign in with your admin account to get started.</div>
-        </div>
-        <Link href="/login" className="bg-[#f05a1a] hover:bg-[#c04010] text-white text-sm font-medium px-6 py-2.5 rounded-lg transition-colors">
-          Admin Login →
+        
+        <Link
+          href="/login"
+          className="bg-[#f05a1a] hover:bg-[#c04010] text-white text-sm sm:text-base font-semibold px-8 sm:px-10 py-3 sm:py-4 rounded-lg transition-all duration-200 flex items-center gap-3 shadow-xl hover:shadow-2xl hover:scale-105 transform"
+        >
+          <span>Access Admin Panel</span>
+          <FontAwesomeIcon icon={faArrowRight} className="w-4 h-4" />
         </Link>
       </div>
+
+      {/* Features Section - Key capabilities showcase */}
+      <div className="px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-xl sm:text-2xl font-semibold text-white text-center mb-3">
+            Everything You Need to Run the Platform
+          </h2>
+          <p className="text-[#888888] text-sm sm:text-base text-center mb-8 sm:mb-12 max-w-2xl mx-auto">
+            Powerful tools designed for efficient platform management
+          </p>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {[
+              {
+                icon: faUsers,
+                title: "User Management",
+                desc: "View, manage, and assign roles to all registered users on the platform with comprehensive access controls.",
+                color: "text-[#f05a1a]",
+                bgColor: "bg-[#f05a1a]/10",
+              },
+              {
+                icon: faStore,
+                title: "Shop Verification",
+                desc: "Review and verify shop registrations, approve or reject applications, and maintain quality standards.",
+                color: "text-[#1a8a8a]",
+                bgColor: "bg-[#1a8a8a]/10",
+              },
+              {
+                icon: faChartLine,
+                title: "Analytics & Insights",
+                desc: "Track platform performance with real-time analytics and make informed decisions based on data.",
+                color: "text-[#f05a1a]",
+                bgColor: "bg-[#f05a1a]/10",
+              },
+              {
+                icon: faGear,
+                title: "System Configuration",
+                desc: "Configure platform settings, manage integrations, and customize the user experience.",
+                color: "text-[#1a8a8a]",
+                bgColor: "bg-[#1a8a8a]/10",
+              },
+              {
+                icon: faShieldHalved,
+                title: "Security & Compliance",
+                desc: "Monitor security events, manage permissions, and ensure platform compliance with regulations.",
+                color: "text-[#f05a1a]",
+                bgColor: "bg-[#f05a1a]/10",
+              },
+              {
+                icon: faBell,
+                title: "Notifications",
+                desc: "Stay updated with real-time alerts for critical events, user activities, and system updates.",
+                color: "text-[#1a8a8a]",
+                bgColor: "bg-[#1a8a8a]/10",
+              },
+            ].map((feature) => (
+              <div
+                key={feature.title}
+                className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 hover:border-[#3a3a3a] transition-all duration-200 hover:transform hover:scale-105 group"
+              >
+                <div
+                  className={`${feature.bgColor} ${feature.color} w-12 h-12 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200`}
+                >
+                  <FontAwesomeIcon icon={feature.icon} className="w-6 h-6" />
+                </div>
+                <h3 className="text-base sm:text-lg font-semibold text-white mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-xs sm:text-sm text-[#888888] leading-relaxed">
+                  {feature.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Call-To-Action Banner - Final conversion prompt */}
+      <div className="px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
+        <div className="max-w-5xl mx-auto bg-gradient-to-r from-[#1a1a1a] to-[#2a1a1a] border border-[#2a2a2a] rounded-2xl p-6 sm:p-8 lg:p-10 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-2xl">
+          <div className="text-center sm:text-left">
+            <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
+              Ready to Manage the Platform?
+            </h3>
+            <p className="text-sm sm:text-base text-[#888888]">
+              Sign in with your admin account to access the dashboard and start managing.
+            </p>
+          </div>
+          <Link
+            href="/login"
+            className="bg-[#f05a1a] hover:bg-[#c04010] text-white text-sm sm:text-base font-semibold px-6 sm:px-8 py-3 sm:py-3.5 rounded-lg transition-all duration-200 flex items-center gap-3 shadow-lg hover:shadow-xl whitespace-nowrap hover:scale-105 transform"
+          >
+            <span>Get Started</span>
+            <FontAwesomeIcon icon={faArrowRight} className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="border-t border-[#2a2a2a] px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-7xl mx-auto text-center text-[#666666] text-xs sm:text-sm">
+          <p>&copy; {new Date().getFullYear()} ZniyerBuy. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 }
