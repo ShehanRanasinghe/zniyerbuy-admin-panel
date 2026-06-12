@@ -4,170 +4,80 @@
 
 import { getAuthToken } from "./auth";
 
-// Backend API endpoint
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
 const API_BASE = `${BACKEND_URL}/api/v1`;
 
-// Helper function to make authenticated requests to backend
 const apiCall = async (endpoint: string, options: RequestInit = {}) => {
   const token = getAuthToken();
-
   const headers = {
     "Content-Type": "application/json",
-    ...(token && { "Authorization": `Bearer ${token}` }),
+    ...(token && { Authorization: `Bearer ${token}` }),
     ...options.headers,
   };
-
   try {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
-      ...options,
-      headers,
-    });
-
+    const response = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
     const data = await response.json();
-
-    if (!response.ok) {
-      return {
-        error: data.error || "API request failed",
-        data: null,
-      };
-    }
-
+    if (!response.ok) return { error: data.error || "API request failed", data: null };
     return { error: null, data: data.data || data };
   } catch (error: any) {
-    return {
-      error: error.message || "Failed to connect to backend",
-      data: null,
-    };
+    return { error: error.message || "Failed to connect to backend", data: null };
   }
 };
 
-// USERS API
-// Fetch all users from backend admin endpoint
-export const fetchUsers = async () => {
-  return apiCall("/admin/users", {
-    method: "GET",
-  });
-};
+// USERS
+export const fetchUsers = async () => apiCall("/admin/users");
+export const updateUserRole = async (userId: string, newRole: string) =>
+  apiCall(`/admin/users/${userId}/role`, { method: "PATCH", body: JSON.stringify({ role: newRole }) });
+export const deleteUser = async (userId: string) =>
+  apiCall(`/admin/users/${userId}`, { method: "DELETE" });
 
-// Update user role via backend
-export const updateUserRole = async (userId: string, newRole: string) => {
-  return apiCall(`/admin/users/${userId}/role`, {
-    method: "PATCH",
-    body: JSON.stringify({ role: newRole }),
-  });
-};
+// SHOPS
+export const fetchShops = async () => apiCall("/admin/shops");
+export const verifyShop = async (shopId: string) =>
+  apiCall(`/admin/shops/${shopId}/verify`, { method: "PATCH", body: JSON.stringify({ status: "approved" }) });
+export const rejectShop = async (shopId: string) =>
+  apiCall(`/admin/shops/${shopId}/verify`, { method: "PATCH", body: JSON.stringify({ status: "rejected" }) });
+export const deleteShop = async (shopId: string) =>
+  apiCall(`/admin/shops/${shopId}`, { method: "DELETE" });
 
-// Delete user account via backend
-export const deleteUser = async (userId: string) => {
-  return apiCall(`/admin/users/${userId}`, {
-    method: "DELETE",
-  });
-};
+// PRODUCTS
+export const fetchProducts = async () => apiCall("/admin/products");
+export const flagProduct = async (productId: string) =>
+  apiCall(`/admin/products/${productId}/flag`, { method: "PATCH", body: JSON.stringify({ is_flagged: true }) });
+export const unflagProduct = async (productId: string) =>
+  apiCall(`/admin/products/${productId}/flag`, { method: "PATCH", body: JSON.stringify({ is_flagged: false }) });
+export const removeProduct = async (productId: string) =>
+  apiCall(`/admin/products/${productId}`, { method: "DELETE" });
 
-// SHOPS API
-// Fetch all shops from backend
-export const fetchShops = async () => {
-  return apiCall("/admin/shops", {
-    method: "GET",
-  });
-};
+// DEALS
+export const fetchDeals = async () => apiCall("/admin/deals");
+export const toggleDeal = async (dealId: string, isActive: boolean) =>
+  apiCall(`/admin/deals/${dealId}/toggle`, { method: "PATCH", body: JSON.stringify({ is_active: isActive }) });
+export const deleteDeal = async (dealId: string) =>
+  apiCall(`/admin/deals/${dealId}`, { method: "DELETE" });
 
-// Verify shop via backend admin endpoint
-export const verifyShop = async (shopId: string) => {
-  return apiCall(`/admin/shops/${shopId}/verify`, {
-    method: "PATCH",
-    body: JSON.stringify({ status: "approved" }),
-  });
-};
+// REVIEWS
+export const fetchReviews = async () => apiCall("/admin/reviews");
+export const deleteReview = async (reviewId: string) =>
+  apiCall(`/admin/reviews/${reviewId}`, { method: "DELETE" });
 
-// Reject shop via backend admin endpoint
-export const rejectShop = async (shopId: string) => {
-  return apiCall(`/admin/shops/${shopId}/verify`, {
-    method: "PATCH",
-    body: JSON.stringify({ status: "rejected" }),
-  });
-};
+// NOTIFICATIONS
+export const fetchNotifications = async () => apiCall("/admin/notifications");
+export const deleteNotification = async (notifId: string) =>
+  apiCall(`/admin/notifications/${notifId}`, { method: "DELETE" });
 
-// Delete shop via backend
-export const deleteShop = async (shopId: string) => {
-  return apiCall(`/admin/shops/${shopId}`, {
-    method: "DELETE",
-  });
-};
+// ANALYTICS
+export const fetchDashboardStats = async () => apiCall("/admin/stats");
+export const fetchTrendData = async () => apiCall("/admin/trends");
+export const fetchRecentUsers = async (limit: number = 4) =>
+  apiCall(`/admin/users/recent?limit=${limit}`);
 
-// PRODUCTS API
-// Fetch all products from backend
-export const fetchProducts = async () => {
-  return apiCall("/admin/products", {
-    method: "GET",
-  });
-};
+// AI
+export const generateAIInsights = async (platformData: any) =>
+  apiCall("/ai/insights", { method: "POST", body: JSON.stringify({ platformData }) });
 
-// Flag product via backend admin endpoint
-export const flagProduct = async (productId: string) => {
-  return apiCall(`/admin/products/${productId}/flag`, {
-    method: "PATCH",
-    body: JSON.stringify({ is_flagged: true }),
-  });
-};
-
-// Unflag product via backend
-export const unflagProduct = async (productId: string) => {
-  return apiCall(`/admin/products/${productId}/flag`, {
-    method: "PATCH",
-    body: JSON.stringify({ is_flagged: false }),
-  });
-};
-
-// Remove/Delete product via backend
-export const removeProduct = async (productId: string) => {
-  return apiCall(`/admin/products/${productId}`, {
-    method: "DELETE",
-  });
-};
-
-// ANALYTICS API
-// Fetch dashboard statistics from backend
-export const fetchDashboardStats = async () => {
-  return apiCall("/admin/stats", {
-    method: "GET",
-  });
-};
-
-// Fetch recent user registrations from backend
-export const fetchRecentUsers = async (limit: number = 4) => {
-  return apiCall(`/admin/users/recent?limit=${limit}`, {
-    method: "GET",
-  });
-};
-
-// AI API
-// Generate AI insights for admin dashboard via backend (connects to AI module)
-export const generateAIInsights = async (platformData: any) => {
-  return apiCall("/ai/insights", {
-    method: "POST",
-    body: JSON.stringify({ platformData }),
-  });
-};
-
-// Fetch top products by revenue/engagement
-export const fetchTopProducts = async (limit: number = 5) => {
-  return apiCall(`/analytics/top-products?limit=${limit}`, {
-    method: "GET",
-  });
-};
-
-// Fetch customer behavior statistics
-export const fetchCustomerBehavior = async () => {
-  return apiCall("/analytics/customer-behavior", {
-    method: "GET",
-  });
-};
-
-// Fetch detailed dashboard metrics (for platform data calculations)
-export const fetchDetailedMetrics = async () => {
-  return apiCall("/admin/metrics", {
-    method: "GET",
-  });
-};
+// EXTENDED ANALYTICS
+export const fetchTopProducts = async (limit: number = 5) =>
+  apiCall(`/analytics/top-products?limit=${limit}`);
+export const fetchCustomerBehavior = async () => apiCall("/analytics/customer-behavior");
+export const fetchDetailedMetrics = async () => apiCall("/admin/metrics");
