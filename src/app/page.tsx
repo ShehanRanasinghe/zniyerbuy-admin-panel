@@ -89,7 +89,7 @@ export default function HomePage() {
           {[
             { icon: "👥", title: "User Management", desc: "View, manage and assign roles to all registered users on the platform." },
             { icon: "🏪", title: "Shop Verification", desc: "Review and verify shop registrations, reject or remove shops as needed." },
-            { icon: "🤖", title: "AI Insights", desc: "Get Claude AI-powered recommendations based on your live platform data." },
+            { icon: "🤖", title: "AI Insights", desc: "Get AI-powered recommendations based on your live platform data." },
           ].map((f) => (
             <div key={f.title} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-5">
               <div className="text-2xl mb-3">{f.icon}</div>

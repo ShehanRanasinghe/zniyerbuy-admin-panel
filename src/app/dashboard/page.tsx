@@ -3,19 +3,17 @@
 // PURPOSE: Displays key platform metrics, charts, AI-powered insights, and recent user activity. This is the landing page when an admin navigates to /dashboard.
 
 // FEATURES:
-    // Summary stat cards (fetched from Supabase in real-time)
-    // AI Insights panel powered by Claude API (Anthropic)
+    // Summary stat cards (fetched from backend API)
+    // AI Insights panel powered by zniyerbuy-ai-module (via backend)
     // Sales Trends chart (AreaChart — monthly revenue from Supabase)
-    // Top Products chart (horizontal BarChart — demo data)
     // Order Trends chart (LineChart — monthly order count from Supabase)
-    // Customer Behaviour chart (PieChart — demo data)
-    // Recent User Registrations list (fetched from Supabase)
+    // Recent User Registrations list (fetched from backend API)
 
 //  DATA SOURCES:
 //  Sales data: Fetched from Supabase "agg_daily_sales" table on mount.
-//  Stats: Fetched from Supabase counts (total users, shops, products, deals).
-//  Recent Users: Fetched from Supabase profiles table.
-//  AI Insights: Generated on-demand via Anthropic Claude API call.
+//  Stats: Fetched from backend API (which queries Supabase).
+//  Recent Users: Fetched from backend API.
+//  AI Insights: Generated via backend AI endpoint which connects to zniyerbuy-ai-module.
 
 //  DEPENDENCIES: recharts (charting library), @supabase/supabase-js
 
@@ -23,11 +21,11 @@
 "use client";
 import { useState, useEffect } from "react";
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, LineChart, Line
 } from "recharts";
 import { createClient } from "@supabase/supabase-js";
-import { fetchDashboardStats, fetchRecentUsers } from "@/lib/api";
+import { fetchDashboardStats, fetchRecentUsers, generateAIInsights } from "@/lib/api";
 
 //SUPABASE CLIENT - Initialized with environment variables
 
@@ -35,30 +33,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
-
-// Pie chart color palette - orange, teal, red matching the brand theme
-
-const PIE_COLORS = ["#f05a1a", "#1a8a8a", "#e24b4a"];
-
-//TOP PRODUCTS DATA - Revenue breakdown by product for the bar chart
-//Shows which grocery items are generating the most revenue.
-
-const topProducts = [
-  { name: "Samba Rice", revenue: 4350 },
-  { name: "Milk Powder", revenue: 3780 },
-  { name: "Kurakkan Flour", revenue: 2240 },
-  { name: "Coconut Oil", revenue: 1520 },
-  { name: "Dhal", revenue: 2520 },
-];
-
-//CUSTOMER BEHAVIOUR DATA - Activity breakdown for the pie chart
-//Shows the distribution of user actions (views, wishlists, purchases).
-
-const customerBehaviour = [
-  { type: "View", count: 520 },
-  { type: "Wishlist", count: 180 },
-  { type: "Purchase", count: 310 },
-];
 
 //ROLE BADGE STYLES — Tailwind class map for role badges in the recent users list
 
@@ -70,7 +44,7 @@ const roleBadge: Record<string, string> = {
 export default function DashboardPage() {
   //Component State
       // salesData       - array of monthly sales objects for the charts (fetched from Supabase)
-      // recentUsers     - array of recent user registrations (fetched from Supabase)
+      // recentUsers     - array of recent user registrations (fetched from backend API)
       // dashboardStats  - object containing real-time user/shop/product/deal counts
       // insights        - array of AI-generated insight strings
       // loading         - whether the AI insight generation is in progress
@@ -111,8 +85,7 @@ export default function DashboardPage() {
   // Data Fetching - Sales Data from Supabase
       //  Runs once on component mount. Queries the "agg_daily_sales" view/table
       //  for daily revenue and order counts, ordered by date ascending.
-      //  If real data exists, it's formatted into { month, revenue, orders } objects.
-      //  If no data is returned (or an error occurs), hardcoded fallback data is used so the charts always render something meaningful.
+      //  Formats the data into { month, revenue, orders } objects for charts.
 
   useEffect(() => {
     const fetchSales = async () => {
@@ -121,41 +94,24 @@ export default function DashboardPage() {
         .select("*")
         .order("sale_date", { ascending: true });
 
-      // Log errors to help debug Supabase connection issues
-
       if (error) {
         console.error("Failed to fetch sales data from Supabase:", error.message);
+        return;
       }
 
       if (data && data.length > 0) {
-
-        //  Format raw Supabase rows into chart-friendly objects
-
         const formatted = data.map((row: any) => ({
           month: new Date(row.sale_date).toLocaleString("default", { month: "short" }),
           revenue: row.total_revenue,
           orders: row.total_orders,
         }));
         setSalesData(formatted);
-      } else {
-
-        // Fallback demo data — ensures charts are never empty
-
-        setSalesData([
-          { month: "Nov", revenue: 45200, orders: 28 },
-          { month: "Dec", revenue: 52800, orders: 35 },
-          { month: "Jan", revenue: 38600, orders: 22 },
-          { month: "Feb", revenue: 61400, orders: 41 },
-          { month: "Mar", revenue: 58900, orders: 38 },
-          { month: "Apr", revenue: 74500, orders: 54 },
-        ]);
       }
     };
     fetchSales();
   }, []);
 
   // Build platform data for AI insights using real statistics
-  // This object contains all the metrics Claude needs to generate insights
   const platformData = {
     totalUsers: dashboardStats.totalUsers,
     activeUsers: Math.floor(dashboardStats.totalUsers * 0.93),
@@ -179,55 +135,29 @@ export default function DashboardPage() {
   ];
 
   // AI Insights Generator
-  //  Calls the Anthropic Claude API to generate 5 actionable insights based on the current platformData object. The prompt asks Claude to return a JSON array of exactly 5 strings.
-  //  SECURITY NOTE: The API key is loaded from NEXT_PUBLIC_ANTHROPIC_API_KEY environment variable. In production, this should be called through a backend API route (Next.js /api route) to avoid exposing the key in the browser. The NEXT_PUBLIC_ prefix makes it client-visible.
+  //  Calls the backend AI endpoint which connects to the zniyerbuy-ai-module for insights generation.
+  //  The AI module analyzes platform data and returns 5 actionable insights.
   //  ERROR HANDLING: Catches all fetch/parse errors and shows a fallback error message in the insights panel.
 
   const generateInsights = async () => {
     setLoading(true);
     setInsights([]);
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || "",
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [{
-            role: "user",
-            content: `You are an AI analyst for ZniyerBuy, a Sri Lankan grocery delivery platform. Based on the following platform data, give exactly 5 short actionable insights and recommendations for the admin. Return ONLY a JSON array of 5 strings, no extra text.
-Platform data:
-- Total users: ${platformData.totalUsers}
-- Active users: ${platformData.activeUsers}
-- Total shops: ${platformData.totalShops}
-- Verified shops: ${platformData.verifiedShops}
-- Pending shop approvals: ${platformData.pendingShops}
-- Rejected shops: ${platformData.rejectedShops}
-- Total products: ${platformData.totalProducts}
-- Flagged products: ${platformData.flaggedProducts}
-- Active deals: ${platformData.activeDeals}
-- New users this month: ${platformData.newUsersThisMonth}
-- Deals posted this month: ${platformData.dealsThisMonth}`,
-          }],
-        }),
-      });
-      const data = await response.json();
+      const { data, error } = await generateAIInsights(platformData);
+      
+      if (error) {
+        throw new Error(error);
+      }
 
-      // Extract the text content from Claude's response structure
-
-      const text = data.content?.[0]?.text || "[]";
-
-      // Strip any markdown code fence wrappers that Claude may add
-
-      const clean = text.replace(/```json|```/g, "").trim();
-      setInsights(JSON.parse(clean));
-      setGenerated(true);
-    } catch {
-      setInsights(["Failed to generate insights. Please try again."]);
+      if (data && Array.isArray(data)) {
+        setInsights(data);
+        setGenerated(true);
+      } else {
+        throw new Error("Invalid response format");
+      }
+    } catch (err: any) {
+      console.error("Failed to generate insights:", err);
+      setInsights(["Failed to generate insights. Please ensure the AI module is running and try again."]);
     } finally {
       setLoading(false);
     }
@@ -258,7 +188,7 @@ Platform data:
       </div>
 
       {/* AI Insights Panel
-          * A card with a "Generate Insights" button that calls the Claude API.
+          * A card with a "Generate Insights" button that calls the backend AI endpoint.
           * Shows three states:
             * 1. Initial - dashed border placeholder prompting the admin to click
             * 2. Loading - pulsing robot icon with "Analyzing..." text
@@ -272,7 +202,7 @@ Platform data:
               <span className="text-lg">🤖</span>
               <span className="text-sm font-medium text-white">AI Insights & Recommendations</span>
             </div>
-            <p className="text-xs text-[#888888] mt-1">Powered by Claude AI — based on your live platform data</p>
+            <p className="text-xs text-[#888888] mt-1">Powered by ZniyerBuy AI Module — based on your live platform data</p>
           </div>
           <button onClick={generateInsights} disabled={loading}
             className="bg-[#f05a1a] hover:bg-[#c04010] disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
@@ -292,12 +222,12 @@ Platform data:
           </div>
         )}
 
-        {/* Loading state - while Claude API call is in progress */}
+        {/* Loading state - while AI module processes the request */}
 
         {loading && (
           <div className="border border-dashed border-[#2a2a2a] rounded-lg p-6 text-center">
             <div className="text-3xl mb-2 animate-pulse">🤖</div>
-            <p className="text-sm text-[#888888]">Claude is analyzing your platform data...</p>
+            <p className="text-sm text-[#888888]">AI module is analyzing your platform data...</p>
           </div>
         )}
 
@@ -315,11 +245,11 @@ Platform data:
         )}
       </div>
 
-      {/* Charts Row 1: Sales Trends + Top Products
+      {/* Charts Row: Sales Trends + Order Trends
         * Two side-by-side charts in a 2-column grid:
           * Left:  AreaChart showing monthly revenue with gradient fill
-          * Right: Horizontal BarChart showing revenue per product
-        * Both use the salesData/topProducts arrays and recharts components.
+          * Right: LineChart showing monthly order counts
+        * Both use the salesData array fetched from Supabase.
       */}
 
       <div className="grid grid-cols-2 gap-3 mb-6">
@@ -329,99 +259,49 @@ Platform data:
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
           <div className="text-sm font-medium text-white mb-1">Sales Trends</div>
           <p className="text-xs text-[#888888] mb-4">Monthly revenue — last 6 months</p>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={salesData}>
-              <defs>
-
-                {/* Gradient fill for the area - fades from 30% opacity to transparent */}
-
-                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f05a1a" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#f05a1a" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a"/>
-              <XAxis dataKey="month" stroke="#666666" tick={{ fontSize: 11 }}/>
-              <YAxis stroke="#666666" tick={{ fontSize: 11 }}/>
-              <Tooltip contentStyle={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 8, color: "#fff" }}/>
-              <Area type="monotone" dataKey="revenue" stroke="#f05a1a" fill="url(#colorRevenue)" strokeWidth={2}/>
-            </AreaChart>
-          </ResponsiveContainer>
+          {salesData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={salesData}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f05a1a" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#f05a1a" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a"/>
+                <XAxis dataKey="month" stroke="#666666" tick={{ fontSize: 11 }}/>
+                <YAxis stroke="#666666" tick={{ fontSize: 11 }}/>
+                <Tooltip contentStyle={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 8, color: "#fff" }}/>
+                <Area type="monotone" dataKey="revenue" stroke="#f05a1a" fill="url(#colorRevenue)" strokeWidth={2}/>
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[200px] flex items-center justify-center text-[#666666] text-sm">
+              No sales data available
+            </div>
+          )}
         </div>
-
-        {/* Top Products - Horizontal Bar Chart */}
-
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
-          <div className="text-sm font-medium text-white mb-1">Top Products</div>
-          <p className="text-xs text-[#888888] mb-4">Revenue by product</p>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={topProducts} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a"/>
-              <XAxis type="number" stroke="#666666" tick={{ fontSize: 11 }}/>
-              <YAxis dataKey="name" type="category" stroke="#666666" tick={{ fontSize: 10 }} width={80}/>
-              <Tooltip contentStyle={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 8, color: "#fff" }}/>
-              <Bar dataKey="revenue" fill="#1a8a8a" radius={[0, 4, 4, 0]}/>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/*  Charts Row 2: Order Trends + Customer Behaviour
-        * Two side-by-side charts in a 2-column grid:
-          * Left:  LineChart showing monthly order counts
-          * Right: Donut PieChart showing view/wishlist/purchase distribution with a legend sidebar
-      */}
-
-      <div className="grid grid-cols-2 gap-3 mb-6">
 
         {/* Order Trends - Line Chart */}
 
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
           <div className="text-sm font-medium text-white mb-1">Order Trends</div>
           <p className="text-xs text-[#888888] mb-4">Monthly orders — last 6 months</p>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={salesData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a"/>
-              <XAxis dataKey="month" stroke="#666666" tick={{ fontSize: 11 }}/>
-              <YAxis stroke="#666666" tick={{ fontSize: 11 }}/>
-              <Tooltip contentStyle={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 8, color: "#fff" }}/>
-              <Line type="monotone" dataKey="orders" stroke="#1a8a8a" strokeWidth={2} dot={{ fill: "#1a8a8a" }}/>
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Customer Behaviour - Donut Pie Chart with legend */}
-
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
-          <div className="text-sm font-medium text-white mb-1">Customer Behaviour</div>
-          <p className="text-xs text-[#888888] mb-4">User activity breakdown</p>
-          <div className="flex items-center justify-between">
-            <ResponsiveContainer width="55%" height={200}>
-              <PieChart>
-                <Pie data={customerBehaviour} cx="50%" cy="50%" innerRadius={50} outerRadius={80}
-                  dataKey="count" paddingAngle={3}>
-
-                  {/* Map each pie slice to its corresponding brand color */}
-
-                  {customerBehaviour.map((_, index) => (
-                    <Cell key={index} fill={PIE_COLORS[index]}/>
-                  ))}
-                </Pie>
+          {salesData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={salesData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a"/>
+                <XAxis dataKey="month" stroke="#666666" tick={{ fontSize: 11 }}/>
+                <YAxis stroke="#666666" tick={{ fontSize: 11 }}/>
                 <Tooltip contentStyle={{ background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 8, color: "#fff" }}/>
-              </PieChart>
+                <Line type="monotone" dataKey="orders" stroke="#1a8a8a" strokeWidth={2} dot={{ fill: "#1a8a8a" }}/>
+              </LineChart>
             </ResponsiveContainer>
-
-            {/* Legend - color dots with labels and counts */}
-
-            <div className="flex flex-col gap-3 pr-4">
-              {customerBehaviour.map((item, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm text-[#888888]">
-                  <span className="w-3 h-3 rounded-full" style={{ background: PIE_COLORS[i] }}></span>
-                  {item.type} — {item.count}
-                </div>
-              ))}
+          ) : (
+            <div className="h-[200px] flex items-center justify-center text-[#666666] text-sm">
+              No order data available
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -432,25 +312,25 @@ Platform data:
 
       <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
         <div className="text-sm font-medium text-white mb-4">Recent user registrations</div>
-        {recentUsers.map((u) => (
-          <div key={u.name} className="flex items-center justify-between py-2 border-b border-[#0a0a0a] last:border-none">
-            <div className="flex items-center gap-3">
-
-              {/* Avatar circle with user initials */}
-
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
-                style={{ background: u.color, color: u.textColor }}>{u.initials}</div>
-              <div>
-                <div className="text-sm text-white">{u.name}</div>
-                <div className="text-xs text-[#666666]">{u.time}</div>
+        {recentUsers.length > 0 ? (
+          recentUsers.map((u) => (
+            <div key={u.name} className="flex items-center justify-between py-2 border-b border-[#0a0a0a] last:border-none">
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
+                  style={{ background: u.color, color: u.textColor }}>{u.initials}</div>
+                <div>
+                  <div className="text-sm text-white">{u.name}</div>
+                  <div className="text-xs text-[#666666]">{u.time}</div>
+                </div>
               </div>
+              <span className={`text-xs px-2 py-1 rounded-full ${roleBadge[u.role]}`}>{u.role}</span>
             </div>
-
-            {/* Role badge - styled differently for User vs Seller */}
-
-            <span className={`text-xs px-2 py-1 rounded-full ${roleBadge[u.role]}`}>{u.role}</span>
+          ))
+        ) : (
+          <div className="text-center py-8 text-[#666666] text-sm">
+            No recent users
           </div>
-        ))}
+        )}
       </div>
 
     </div>
