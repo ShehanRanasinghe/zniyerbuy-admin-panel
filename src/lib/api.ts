@@ -141,3 +141,33 @@ export const fetchRecentUsers = async (limit: number = 4) => {
     method: "GET",
   });
 };
+
+// AI API
+// Generate AI insights for admin dashboard via backend (connects to AI module)
+export const generateAIInsights = async (platformData: any) => {
+  return apiCall("/ai/insights", {
+    method: "POST",
+    body: JSON.stringify({ platformData }),
+  });
+};
+
+// Fetch top products by revenue/engagement
+export const fetchTopProducts = async (limit: number = 5) => {
+  return apiCall(`/analytics/top-products?limit=${limit}`, {
+    method: "GET",
+  });
+};
+
+// Fetch customer behavior statistics
+export const fetchCustomerBehavior = async () => {
+  return apiCall("/analytics/customer-behavior", {
+    method: "GET",
+  });
+};
+
+// Fetch detailed dashboard metrics (for platform data calculations)
+export const fetchDetailedMetrics = async () => {
+  return apiCall("/admin/metrics", {
+    method: "GET",
+  });
+};
