@@ -198,7 +198,7 @@ export default function UsersPage() {
                         <button
                           onClick={() => handleStatusToggle(user.id, user.isActive, user.name)}
                           disabled={updatingId === user.id}
-                          className={`text-xs border rounded px-2 py-1 transition-colors disabled:opacity-50 flex items-center gap-1 ${
+                          className={`text-sm border rounded px-2.5 py-1.5 transition-colors disabled:opacity-50 flex items-center gap-1.5 ${
                             user.isActive 
                               ? 'text-[#1a8a8a] border-[#1a2a2a] hover:bg-[#0a2a2a]' 
                               : 'text-[#888] border-[#222] hover:bg-[#1a1a1a]'
@@ -206,8 +206,18 @@ export default function UsersPage() {
                           title={user.isActive ? 'Deactivate account' : 'Activate account'}
                         >
                           {updatingId === user.id
-                            ? <FontAwesomeIcon icon={faSpinner} className="w-3 h-3 animate-spin" />
-                            : <FontAwesomeIcon icon={user.isActive ? faToggleOn : faToggleOff} className="w-3 h-3" />}
+                            ? <FontAwesomeIcon icon={faSpinner} className="w-4 h-4 animate-spin" />
+                            : <FontAwesomeIcon icon={user.isActive ? faToggleOn : faToggleOff} className="w-4 h-4" />}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(user.id, user.name)}
+                          disabled={updatingId === user.id}
+                          className="text-sm text-[#e24b4a] border border-[#2a1a1a] rounded px-2.5 py-1.5 hover:bg-[#2a1a1a] transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                          title="Delete user permanently"
+                        >
+                          {updatingId === user.id
+                            ? <FontAwesomeIcon icon={faSpinner} className="w-4 h-4 animate-spin" />
+                            : <FontAwesomeIcon icon={faTrash} className="w-4 h-4" />}
                         </button>
                       </div>
                     </td>
