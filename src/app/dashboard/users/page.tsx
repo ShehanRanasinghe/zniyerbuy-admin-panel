@@ -1,10 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import { fetchUsers, updateUserRole, deleteUser } from "@/lib/api";
+import { fetchUsers, updateUserRole, toggleUserStatus, deleteUser } from "@/lib/api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUsers, faUserShield, faStore, faSearch,
-  faTrash, faSpinner, faUserPlus,
+  faTrash, faSpinner, faToggleOn, faToggleOff,
 } from "@fortawesome/free-solid-svg-icons";
 
 const roleBadge: Record<string, string> = {
@@ -51,8 +51,19 @@ export default function UsersPage() {
     setUpdatingId(null);
   };
 
+  const handleStatusToggle = async (userId: string, currentStatus: boolean, userName: string) => {
+    const action = currentStatus ? "deactivate" : "activate";
+    if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} ${userName}'s account?`)) return;
+    setUpdatingId(userId);
+    setError("");
+    const { error: e } = await toggleUserStatus(userId, !currentStatus);
+    if (e) setError(e);
+    else setUsers(users.map((u) => (u.id === userId ? { ...u, status: !currentStatus ? 'Active' : 'Inactive', isActive: !currentStatus } : u)));
+    setUpdatingId(null);
+  };
+
   const handleDelete = async (userId: string, userName: string) => {
-    if (!confirm(`Delete ${userName}? This cannot be undone.`)) return;
+    if (!confirm(`Permanently delete ${userName}? This cannot be undone.`)) return;
     setUpdatingId(userId);
     setError("");
     const { error: e } = await deleteUser(userId);
@@ -70,12 +81,8 @@ export default function UsersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-xl font-semibold text-white">User Management</h1>
-          <p className="text-[#666] text-sm mt-1">Manage all registered users on the platform</p>
+          <p className="text-[#666] text-sm mt-1">Manage user accounts and their status on the platform</p>
         </div>
-        <button className="flex items-center gap-2 bg-[#f05a1a] hover:bg-[#c04010] text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors w-fit">
-          <FontAwesomeIcon icon={faUserPlus} className="w-3.5 h-3.5" />
-          Add User
-        </button>
       </div>
 
       {error && (
@@ -189,13 +196,18 @@ export default function UsersPage() {
                           <option>User</option>
                         </select>
                         <button
-                          onClick={() => handleDelete(user.id, user.name)}
+                          onClick={() => handleStatusToggle(user.id, user.isActive, user.name)}
                           disabled={updatingId === user.id}
-                          className="text-xs text-[#e24b4a] border border-[#2a1a1a] rounded px-2 py-1 hover:bg-[#2a1a1a] transition-colors disabled:opacity-50 flex items-center gap-1"
+                          className={`text-xs border rounded px-2 py-1 transition-colors disabled:opacity-50 flex items-center gap-1 ${
+                            user.isActive 
+                              ? 'text-[#1a8a8a] border-[#1a2a2a] hover:bg-[#0a2a2a]' 
+                              : 'text-[#888] border-[#222] hover:bg-[#1a1a1a]'
+                          }`}
+                          title={user.isActive ? 'Deactivate account' : 'Activate account'}
                         >
                           {updatingId === user.id
                             ? <FontAwesomeIcon icon={faSpinner} className="w-3 h-3 animate-spin" />
-                            : <FontAwesomeIcon icon={faTrash} className="w-3 h-3" />}
+                            : <FontAwesomeIcon icon={user.isActive ? faToggleOn : faToggleOff} className="w-3 h-3" />}
                         </button>
                       </div>
                     </td>

@@ -28,6 +28,8 @@ const apiCall = async (endpoint: string, options: RequestInit = {}) => {
 export const fetchUsers = async () => apiCall("/admin/users");
 export const updateUserRole = async (userId: string, newRole: string) =>
   apiCall(`/admin/users/${userId}/role`, { method: "PATCH", body: JSON.stringify({ role: newRole }) });
+export const toggleUserStatus = async (userId: string, isActive: boolean) =>
+  apiCall(`/admin/users/${userId}/status`, { method: "PATCH", body: JSON.stringify({ is_active: isActive }) });
 export const deleteUser = async (userId: string) =>
   apiCall(`/admin/users/${userId}`, { method: "DELETE" });
 
