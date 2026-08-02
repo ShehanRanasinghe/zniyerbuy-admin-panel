@@ -44,12 +44,25 @@ export const deleteShop = async (shopId: string) =>
 
 // PRODUCTS
 export const fetchProducts = async () => apiCall("/admin/products");
-export const flagProduct = async (productId: string) =>
-  apiCall(`/admin/products/${productId}/flag`, { method: "PATCH", body: JSON.stringify({ is_flagged: true }) });
-export const unflagProduct = async (productId: string) =>
-  apiCall(`/admin/products/${productId}/flag`, { method: "PATCH", body: JSON.stringify({ is_flagged: false }) });
-export const removeProduct = async (productId: string) =>
-  apiCall(`/admin/products/${productId}`, { method: "DELETE" });
+
+// Shop + category dropdown options for the products page, sourced from the
+// database (GET /admin/products/filters) instead of a hardcoded list.
+export const fetchProductFilters = async () => apiCall("/admin/products/filters");
+
+// Soft-deletes a product: the row in `products` is never removed. The
+// backend inserts a record into `flagged_products` (linked to the product
+// and its shop) and hides the product from the shop by setting
+// is_available to false. Optionally pass a reason for the audit trail.
+export const flagProduct = async (productId: string, reason?: string) =>
+  apiCall(`/admin/products/${productId}`, {
+    method: "DELETE",
+    body: reason ? JSON.stringify({ reason }) : undefined,
+  });
+
+// Reverses a soft delete: removes the flagged_products record and makes the
+// product available to its shop again.
+export const restoreProduct = async (productId: string) =>
+  apiCall(`/admin/products/${productId}/restore`, { method: "PATCH" });
 
 // DEALS
 export const fetchDeals = async () => apiCall("/admin/deals");
@@ -71,6 +84,7 @@ export const deleteNotification = async (notifId: string) =>
 // ANALYTICS
 export const fetchDashboardStats = async () => apiCall("/admin/stats");
 export const fetchTrendData = async () => apiCall("/admin/trends");
+export const fetchBreakdownData = async () => apiCall("/admin/breakdown");
 export const fetchRecentUsers = async (limit: number = 4) =>
   apiCall(`/admin/users/recent?limit=${limit}`);
 
