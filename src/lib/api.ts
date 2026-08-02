@@ -71,6 +71,7 @@ export const deleteNotification = async (notifId: string) =>
 // ANALYTICS
 export const fetchDashboardStats = async () => apiCall("/admin/stats");
 export const fetchTrendData = async () => apiCall("/admin/trends");
+export const fetchBreakdownData = async () => apiCall("/admin/breakdown");
 export const fetchRecentUsers = async (limit: number = 4) =>
   apiCall(`/admin/users/recent?limit=${limit}`);
 
